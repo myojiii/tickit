@@ -1,0 +1,26 @@
+<!-- Edit Category Modal -->
+<div class="modal-overlay hidden" id="edit-modal" role="dialog" aria-modal="true">
+  <div class="modal-card" role="document">
+    <header class="modal-header">
+      <h3 class="modal-title">Edit Category</h3>
+      <button class="modal-close" id="edit-modal-close" aria-label="Close dialog">×</button>
+    </header>
+    <div class="modal-sub">Update the category for this ticket</div>
+
+    <div class="modal-body">
+      <div class="modal-row"><strong>Ticket ID:</strong> <span id="edit-ticket-id">-</span></div>
+      <div class="modal-row"><strong>Current Category:</strong> <span id="edit-current-category">-</span></div>
+
+      <label class="modal-label" for="edit-category-select">New Category</label>
+      <select id="edit-category-select" class="modal-select">
+        <option value="">Select a category</option>
+        <!-- Categories loaded from database -->
+      </select>
+    </div>
+
+    <footer class="modal-footer">
+      <button class="modal-btn" id="edit-modal-cancel">Cancel</button>
+      <button class="modal-btn primary" id="edit-modal-update">Update Category</button>
+    </footer>
+  </div>
+</div>

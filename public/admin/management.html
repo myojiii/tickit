@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TickIT | Management</title>
+  <link rel="stylesheet" href="/styles/admin.css">
+  <link rel="stylesheet" href="/styles/admin-modals.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg viewBox="0 0 24 24" class="toggle-icon">
+          <path d="M15 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+      
+
+      <div class="sidebar-top">
+        <div class="brand">
+          <img src="/assets/logo.png" alt="TickIT logo" class="logo">
+          <div class="brand-text">
+            <div class="brand-name">TickIT</div>
+            <div class="brand-sub">Ticketing System</div>
+          </div>
+        </div>
+
+        <nav class="nav-menu">
+          <button class="nav-btn" type="button" data-tooltip="Manage Tickets" onclick="window.location.href='/admin'">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                <path d="M14 2v6h6"/>
+                <path d="M16 13H8"/>
+                <path d="M16 17H8"/>
+                <path d="M10 9H8"/>
+              </svg>
+            </span>
+            <span class="nav-text">Manage Tickets</span>
+          </button>
+
+          <button class="nav-btn active" type="button" data-tooltip="Management">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </span>
+            <span class="nav-text">Management</span>
+          </button>
+
+
+          <button class="nav-btn" type="button" data-tooltip="Reports" onclick="window.location.href='/admin/reports.html'" >
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+              </svg>
+            </span>
+            <span class="nav-text">Reports</span>
+          </button>
+
+          <button class="nav-btn" type="button" data-tooltip="Staff Requests">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="9" y1="9" x2="15" y2="9"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+              </svg>
+            </span>
+            <span class="nav-text">Staff Requests</span>
+          </button>
+        </nav>
+      </div>
+
+      <button class="logout-btn" id="logout-btn" type="button">
+        <span class="logout-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </span>
+        <span class="logout-text">Logout</span>
+      </button>
+    </aside>
+
+    <section class="content">
+      <header class="topbar">
+        <div class="topbar-text">
+          <div class="topbar-title">Management</div>
+          <div class="topbar-sub">Manage user, accounts, and ticket category</div>
+          
+        </div>
+                <div class="topbar-actions">
+          <button class="bell-btn" id="bell-btn" aria-label="Notifications">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.93 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            <span class="bell-badge" id="bell-badge">0</span>
+          </button>
+          <div class="notifications-panel hidden" id="notifications-panel">
+            <div class="notifications-header">
+              <h3>Notifications</h3>
+              <div class="notifications-header-actions">
+                <button class="mark-all-read-btn" id="mark-all-read-btn" aria-label="Mark all as read">
+                  <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="notifications-list" id="notifications-list">
+              <p class="empty-state">No notifications</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="scroll-area management-area">
+        <div class="mgmt-card">
+          <div class="mgmt-header">
+            <div class="mgmt-header-text">
+              <div class="mgmt-title">Team & Access</div>
+              <div class="mgmt-subtitle">Manage users, staff, and categories</div>
+            </div>
+            <div class="mgmt-pill">Management</div>
+            
+          </div>
+
+          <div class="mgmt-tabs">
+            <button class="mgmt-tab active" data-tab="users">Users</button>
+            <button class="mgmt-tab" data-tab="staff">Staff</button>
+            <button class="mgmt-tab" data-tab="category">Category</button>
+          </div>
+
+          <div class="mgmt-actions hidden" id="staff-actions">
+            <button class="primary-btn" id="add-staff-btn">Add New Staff</button>
+          </div>
+
+          <div class="mgmt-actions hidden" id="category-actions">
+            <button class="primary-btn" id="add-category-btn">Add New Category</button>
+          </div>
+
+          <div class="mgmt-table-wrap">
+            <table class="mgmt-table" data-table="users">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Date</th>
+                  <th>Tickets Submitted</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="mgmt-table-body">
+                <tr>
+                  <td>Maurice Ramos</td>
+                  <td>mauriceramos@gmail.com</td>
+                  <td>11/20/2025</td>
+                  <td>2</td>
+                  <td><button class="ghost-btn small"><span aria-hidden="true">👁</span> View Details</button></td>
+                </tr>
+                <tr>
+                  <td>Jhen Serrana</td>
+                  <td>jhenserrana@gmail.com</td>
+                  <td>12/12/2025</td>
+                  <td>1</td>
+                  <td><button class="ghost-btn small"><span aria-hidden="true">👁</span> View Details</button></td>
+                </tr>
+                <tr>
+                  <td>Jelaine Absalon</td>
+                  <td>jelainabsalon@gmail.com</td>
+                  <td>1/8/2025</td>
+                  <td>8</td>
+                  <td><button class="ghost-btn small"><span aria-hidden="true">👁</span> View Details</button></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <table class="mgmt-table hidden" data-table="staff">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Department</th>
+                  <th>Date</th>
+                  <th>Assigned Tickets</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="mgmt-table-body-staff">
+                <tr>
+                  <td>Network Lead</td>
+                  <td>Network</td>
+                  <td>2/10/2025</td>
+                  <td class="center">12</td>
+                  <td>
+                    <div class="action-icons">
+                      <button class="icon-action-btn view-btn" title="View">👁</button>
+                      <button class="icon-action-btn edit-btn" title="Update">✏️</button>
+                      <button class="icon-action-btn delete-btn" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Support Agent</td>
+                  <td>Software</td>
+                  <td>3/5/2025</td>
+                  <td class="center">5</td>
+                  <td>
+                    <div class="action-icons">
+                      <button class="icon-action-btn view-btn" title="View">👁</button>
+                      <button class="icon-action-btn edit-btn" title="Update">✏️</button>
+                      <button class="icon-action-btn delete-btn" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>On-call Engineer</td>
+                  <td>Hardware</td>
+                  <td>4/1/2025</td>
+                  <td class="center">9</td>
+                  <td>
+                    <div class="action-icons">
+                      <button class="icon-action-btn view-btn" title="View">👁</button>
+                      <button class="icon-action-btn edit-btn" title="Update">✏️</button>
+                      <button class="icon-action-btn delete-btn" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <table class="mgmt-table hidden" data-table="category">
+              <thead>
+                <tr>
+                  <th>Category Name</th>
+                  <th>Date</th>
+                  <th>Staff Assigned</th>
+                  <th>Tickets Received</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="mgmt-table-body-category">
+                <tr>
+                  <td>Network & VPN</td>
+                  <td>1/2/2025</td>
+                  <td class="center">4</td>
+                  <td class="center">15</td>
+                  <td>
+                    <div class="action-icons">
+                      <button class="icon-action-btn view-btn" title="View">👁</button>
+                      <button class="icon-action-btn edit-btn" title="Update">✏️</button>
+                      <button class="icon-action-btn delete-btn" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Software Installation</td>
+                  <td>2/14/2025</td>
+                  <td class="center">3</td>
+                  <td class="center">10</td>
+                  <td>
+                    <div class="action-icons">
+                      <button class="icon-action-btn view-btn" title="View">👁</button>
+                      <button class="icon-action-btn edit-btn" title="Update">✏️</button>
+                      <button class="icon-action-btn delete-btn" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Hardware Requests</td>
+                  <td>5/22/2025</td>
+                  <td class="center">2</td>
+                  <td class="center">7</td>
+                  <td>
+                    <div class="action-icons">
+                      <button class="icon-action-btn view-btn" title="View">👁</button>
+                      <button class="icon-action-btn edit-btn" title="Update">✏️</button>
+                      <button class="icon-action-btn delete-btn" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/scripts/admin.js"></script>
+  <script src="/scripts/admin-management.js"></script>
+
+  <!-- Add Staff Modal -->
+  <div class="modal-overlay hidden" id="add-staff-modal" role="dialog" aria-modal="true">
+    <div class="modal-card" role="document">
+      <header class="modal-header">
+        <h3 class="modal-title">Add New Staff</h3>
+        <button class="modal-close" id="add-staff-close" aria-label="Close dialog">×</button>
+      </header>
+
+      <div class="modal-body">
+        <label class="modal-label" for="staff-name">Name</label>
+        <input id="staff-name" class="modal-input" type="text" placeholder="Enter full name">
+
+        <label class="modal-label" for="staff-email">Email</label>
+        <input id="staff-email" class="modal-input" type="email" placeholder="Enter email">
+
+        <label class="modal-label" for="staff-password">Password</label>
+        <input id="staff-password" class="modal-input" type="password" placeholder="Enter password">
+
+        <label class="modal-label" for="staff-department">Department</label>
+        <select id="staff-department" class="modal-input">
+          <option value="">Select a department</option>
+        </select>
+
+        <label class="modal-label" for="staff-number">Phone (optional)</label>
+        <input id="staff-number" class="modal-input" type="text" placeholder="Enter phone">
+      </div>
+
+      <footer class="modal-footer">
+        <button class="modal-btn" id="add-staff-cancel">Cancel</button>
+        <button class="modal-btn primary" id="add-staff-save">Create Staff</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Add Category Modal -->
+  <div class="modal-overlay hidden mgmt-modal" id="add-category-modal" role="dialog" aria-modal="true">
+    <div class="modal-card" role="document">
+      <header class="modal-header">
+        <h3 class="modal-title">Add New Category</h3>
+        <button class="modal-close" id="add-category-close" aria-label="Close dialog">×</button>
+      </header>
+
+      <div class="modal-body modal-grid">
+        <div class="modal-input-group">
+          <label class="modal-label" for="category-code">Category Code</label>
+          <input id="category-code" class="modal-input" type="text" placeholder="Enter category code">
+        </div>
+
+        <div class="modal-input-group">
+          <label class="modal-label" for="category-name">Category Name</label>
+          <input id="category-name" class="modal-input" type="text" placeholder="Enter category name">
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button class="modal-btn" id="add-category-cancel">Cancel</button>
+        <button class="modal-btn primary" id="add-category-save">Create Category</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- View User Modal -->
+  <div class="modal-overlay hidden mgmt-modal" id="view-user-modal" role="dialog" aria-modal="true">
+    <div class="modal-card" role="document">
+      <header class="modal-header">
+        <h3 class="modal-title">User Details</h3>
+        <button class="modal-close" id="view-user-close" aria-label="Close dialog">×</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Name</div>
+            <div class="modal-value" id="vu-name">—</div>
+          </div>
+          <div>
+            <div class="modal-label">Email</div>
+            <div class="modal-value" id="vu-email">—</div>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">User ID</div>
+            <div class="modal-value" id="vu-id">—</div>
+          </div>
+          <div>
+            <div class="modal-label">Tickets Submitted</div>
+            <div class="modal-value" id="vu-tickets">0</div>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Date Created</div>
+            <div class="modal-value" id="vu-date">—</div>
+          </div>
+          <div>
+            <div class="modal-label">Phone</div>
+            <div class="modal-value" id="vu-number">Not provided</div>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Address</div>
+            <div class="modal-value" id="vu-address">Not provided</div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button class="modal-btn primary" id="view-user-close-btn">Close</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- View Staff Modal -->
+  <div class="modal-overlay hidden mgmt-modal" id="view-staff-modal" role="dialog" aria-modal="true">
+    <div class="modal-card" role="document">
+      <header class="modal-header">
+        <h3 class="modal-title">Staff Details</h3>
+        <button class="modal-close" id="view-staff-close" aria-label="Close dialog">×</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Name</div>
+            <div class="modal-value" id="vs-name">—</div>
+          </div>
+          <div>
+            <div class="modal-label">Email</div>
+            <div class="modal-value" id="vs-email">—</div>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Staff ID</div>
+            <div class="modal-value" id="vs-id">—</div>
+          </div>
+          <div>
+            <div class="modal-label">Department</div>
+            <div class="modal-value" id="vs-dept">—</div>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Date Created</div>
+            <div class="modal-value" id="vs-date">—</div>
+          </div>
+          <div>
+            <div class="modal-label">Assigned Tickets</div>
+            <div class="modal-value" id="vs-tickets">0</div>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Phone</div>
+            <div class="modal-value" id="vs-number">Not provided</div>
+          </div>
+          <div>
+            <div class="modal-label">Address</div>
+            <div class="modal-value" id="vs-address">Not provided</div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button class="modal-btn primary" id="view-staff-close-btn">Close</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Edit Staff Modal -->
+  <div class="modal-overlay hidden mgmt-modal" id="edit-staff-modal" role="dialog" aria-modal="true">
+    <div class="modal-card" role="document">
+      <header class="modal-header">
+        <h3 class="modal-title">Edit Staff</h3>
+        <button class="modal-close" id="edit-staff-close" aria-label="Close dialog">×</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Name</div>
+            <div class="modal-value" id="es-name">—</div>
+          </div>
+          <div>
+            <div class="modal-label">Email</div>
+            <div class="modal-value" id="es-email">—</div>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Staff ID</div>
+            <div class="modal-value" id="es-id">—</div>
+          </div>
+          <div>
+            <label class="modal-label" for="es-dept">Department</label>
+            <select id="es-dept" class="modal-input">
+              <option value="">Select a department</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Date Created</div>
+            <div class="modal-value" id="es-date">—</div>
+          </div>
+          <div>
+            <div class="modal-label">Assigned Tickets</div>
+            <div class="modal-value" id="es-tickets">0</div>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <label class="modal-label" for="es-number">Phone</label>
+            <input id="es-number" class="modal-input" type="text" placeholder="Enter phone">
+          </div>
+          <div>
+            <div class="modal-label">Address</div>
+            <div class="modal-summary" style="gap: 12px; padding: 0; border: none; box-shadow: none;">
+              <input id="es-city" class="modal-input" type="text" placeholder="City">
+              <input id="es-province" class="modal-input" type="text" placeholder="Province">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button class="modal-btn" id="edit-staff-cancel">Cancel</button>
+        <button class="modal-btn primary" id="edit-staff-save">Save Changes</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- View Category Modal -->
+  <div class="modal-overlay hidden mgmt-modal" id="view-category-modal" role="dialog" aria-modal="true">
+    <div class="modal-card" role="document">
+      <header class="modal-header">
+        <h3 class="modal-title">Category Details</h3>
+        <button class="modal-close" id="view-category-close" aria-label="Close dialog">×</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Category Code</div>
+            <div class="modal-value" id="vc-code">—</div>
+          </div>
+          <div>
+            <div class="modal-label">Category Name</div>
+            <div class="modal-value" id="vc-name">—</div>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Date Created</div>
+            <div class="modal-value" id="vc-date">—</div>
+          </div>
+          <div>
+            <div class="modal-label">Staff Assigned</div>
+            <div class="modal-value" id="vc-staff">0</div>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Tickets Received</div>
+            <div class="modal-value" id="vc-tickets">0</div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button class="modal-btn primary" id="view-category-close-btn">Close</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Edit Category Modal -->
+  <div class="modal-overlay hidden mgmt-modal" id="edit-category-modal" role="dialog" aria-modal="true">
+    <div class="modal-card" role="document">
+      <header class="modal-header">
+        <h3 class="modal-title">Edit Category</h3>
+        <button class="modal-close" id="edit-category-close" aria-label="Close dialog">×</button>
+      </header>
+
+
+      <div class="modal-body">
+        <div class="modal-summary">
+          <div>
+            <label class="modal-label" for="ec-code">Category Code</label>
+            <input id="ec-code" class="modal-input" type="text" placeholder="Enter category code">
+          </div>
+          <div>
+            <label class="modal-label" for="ec-name">Category Name</label>
+            <input id="ec-name" class="modal-input" type="text" placeholder="Enter category name">
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Date Created</div>
+            <div class="modal-value" id="ec-date">—</div>
+          </div>
+          <div>
+            <div class="modal-label">Staff Assigned</div>
+            <div class="modal-value" id="ec-staff">0</div>
+          </div>
+        </div>
+
+        <div class="modal-summary">
+          <div>
+            <div class="modal-label">Tickets Received</div>
+            <div class="modal-value" id="ec-tickets">0</div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button class="modal-btn" id="edit-category-cancel">Cancel</button>
+        <button class="modal-btn primary" id="edit-category-save">Save Changes</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="notification-container" id="notification-container"></div>
+  <script src="/scripts/notifications.js"></script>
+</body>
+</html>

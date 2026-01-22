@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TickIT | Staff Dashboard</title>
+  <link rel="stylesheet" href="/styles/staff.css">
+</head>
+<body>
+  <div class="layout">
+   <aside class="sidebar">
+  <!-- Toggle Button -->
+  <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+    <svg viewBox="0 0 24 24" class="toggle-icon">
+      <path d="M15 18l-6-6 6-6"></path>
+    </svg>
+  </button>
+
+  <div class="sidebar-top">
+    <div class="brand">
+      <img src="/assets/logo.png" alt="TickIT logo" class="logo">
+      <div class="brand-text">
+        <div class="brand-name">TickIT</div>
+        <div class="brand-sub">Ticketing System</div>
+      </div>
+    </div>
+
+    <nav class="nav-menu">
+      <button class="nav-btn active" type="button" data-tooltip="Manage Tickets">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+            <path d="M14 2v6h6"/>
+            <path d="M16 13H8"/>
+            <path d="M16 17H8"/>
+            <path d="M10 9H8"/>
+          </svg>
+          <span class="notification-badge" id="notification-badge"></span>
+        </span>
+        <span class="nav-text">Manage Tickets</span>
+      </button>
+    </nav>
+  </div>
+
+  <button class="logout-btn" id="logout-btn" type="button">
+    <span class="logout-icon">
+      <svg viewBox="0 0 24 24">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    </span>
+    <span class="logout-text">Logout</span>
+  </button>
+</aside>
+
+    <section class="content">
+      <header class="topbar">
+        <div class="topbar-text">
+          <div class="topbar-title">Manage Ticket</div>
+          <div class="topbar-sub">View and manage your support tickets</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="bell-btn" id="bell-btn" aria-label="Notifications">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.93 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            <span class="bell-badge" id="bell-badge">0</span>
+          </button>
+          <div class="notifications-panel hidden" id="notifications-panel">
+            <div class="notifications-header">
+              <h3>Notifications</h3>
+              <div class="notifications-header-actions">
+                <button class="mark-all-read-btn" id="mark-all-read-btn" aria-label="Mark all as read">
+                  <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                </button>
+                <button class="close-notifications" id="close-notifications" aria-label="Close">
+                  <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="notifications-list" id="notifications-list">
+              <p class="empty-state">No notifications</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="scroll-area">
+        <section class="tickets">
+          <header class="section-head">
+            <div class="section-title">My Tickets</div>
+            <div class="section-sub">Track and manage your support requests</div>
+          </header>
+
+          <div class="filters">
+            <div class="filter dropdown">
+              <button class="filter-btn" id="category-toggle" type="button">
+                <span class="filter-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4.75 5.5h14.5l-5.9 6.8v4.7l-2.7 1.5v-6.2L4.75 5.5Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+                  </svg>
+                </span>
+                <span id="category-label"></span>
+                <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m8.5 10 3.5 3.5L15.5 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+                </svg>
+              </button>
+              <div class="dropdown-menu hidden" id="category-menu"></div>
+            </div>
+
+            <div class="filter dropdown">
+              <button class="filter-btn" id="status-toggle" type="button">
+                <span id="status-label">All Statuses</span>
+                <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m8.5 10 3.5 3.5L15.5 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+                </svg>
+              </button>
+              <div class="dropdown-menu hidden" id="status-menu"></div>
+            </div>
+          </div>
+
+          <!-- Tickets will be loaded dynamically here -->
+          <article class="ticket-card" style="text-align: center; padding: 40px;">
+            <p>Loading tickets...</p>
+          </article>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div class="notification-container" id="notification-container"></div>
+
+  <script src="/scripts/staff.js"></script>
+</body>
+</html>
