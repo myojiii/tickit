@@ -230,6 +230,17 @@
     });
   };
 
+  const handleLogout = () => {
+    // Clear all authentication data from localStorage
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("ticketOpenedTimes");
+    
+    // Redirect to login page
+    window.location.href = "/auth/login.html";
+  };
+
   document.addEventListener("DOMContentLoaded", () => {
     window.ClientApp = {
       state,
@@ -240,6 +251,12 @@
     setupTabs();
     setupForm();
     initUser();
+
+    // Logout button handler
+    const logoutBtn = document.getElementById("logout-btn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", handleLogout);
+    }
 
     // Periodically refresh tickets to detect new replies from staff
     // This ensures badges appear when staff sends messages
