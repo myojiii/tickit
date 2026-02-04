@@ -809,22 +809,27 @@ body {
 .attach-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   border: none;
   background: transparent;
-  color: var(--text);
-  font-weight: 700;
+  color: #6b7280;
+  border-radius: 8px;
   cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .attach-btn:hover {
-  color: var(--primary);
+  color: var(--text);
+  transform: translateY(-1px);
 }
 
-.attach-btn svg {
+.attach-btn img {
   width: 16px;
   height: 16px;
-  fill: currentColor;
+  filter: grayscale(100%);
 }
 
 .send-btn {
