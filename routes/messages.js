@@ -6,12 +6,28 @@ import { getMessages, postMessage, markTicketNotificationsRead } from "../contro
 
 const router = Router();
 
+<<<<<<< HEAD
 // Configure Cloudinary
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+=======
+// Configure multer for file uploads
+// Use /tmp on Vercel (read-only fs) and public/uploads locally
+const uploadDir = process.env.VERCEL
+  ? path.join(process.env.TMPDIR || "/tmp", "uploads", "messages")
+  : path.join("public", "uploads", "messages");
+
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.error("Failed to create upload directory:", uploadDir, err);
+}
+>>>>>>> d50ed4a6f97a124b4f42b283dd12c1e09ffc7162
 
 // Configure multer with Cloudinary storage
 const storage = new CloudinaryStorage({
