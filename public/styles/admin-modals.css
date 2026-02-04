@@ -199,6 +199,14 @@
 
 .info-item {
   margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #d5d9e5;
+}
+
+.info-group .info-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .info-label {

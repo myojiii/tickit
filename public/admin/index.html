@@ -119,61 +119,95 @@
         </div>
       </header>
 
-      <div class="scroll-area">
-        <!-- Unassigned Category Section -->
-        <section class="tickets-section">
-          <header class="section-head">
-            <div class="section-title">Unassigned Category</div>
-            <div class="section-sub">Tickets that need category assignment</div>
-          </header>
+      <div class="scroll-area management-area">
+        <!-- Unified Tickets Tabs -->
+        <section class="mgmt-card">
+          <div class="mgmt-header">
+            <div class="mgmt-header-text">
+              <div class="mgmt-title">Tickets</div>
+              <div class="mgmt-subtitle">View every ticket by queue position or status</div>
+            </div>
+            <div class="mgmt-pill"></div>
+          </div>
 
-          <table class="tickets-table">
-            <thead>
-              <tr>
-                <th>Ticket Title</th>
-                <th>Ticket Description</th>
-                <th>Date Submitted</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Tickets will be loaded dynamically from database -->
-              <tr>
-                <td colspan="4" style="text-align: center; padding: 40px; color: #666;">
-                  Loading tickets...
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
+          <div class="mgmt-tabs tickets-tabs">
+            <button class="mgmt-tab active" data-tab="unassigned">Unassigned</button>
+            <button class="mgmt-tab" data-tab="open">Open</button>
+            <button class="mgmt-tab" data-tab="in-progress">In Progress</button>
+            <button class="mgmt-tab" data-tab="resolved">Resolved</button>
+          </div>
 
-        <!-- All Tickets Section -->
-        <section class="tickets-section">
-          <header class="section-head">
-            <div class="section-title">All Tickets</div>
-            <div class="section-sub">Complete support of all the tickets</div>
-          </header>
+          <div class="mgmt-table-wrap">
+            <table class="mgmt-table tickets-table" data-status="unassigned">
+              <thead>
+                <tr>
+                  <th>Ticket Title</th>
+                  <th>Ticket Description</th>
+                  <th>Date Submitted</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
+                </tr>
+              </tbody>
+            </table>
 
-          <table class="tickets-table">
-            <thead>
-              <tr>
-                <th>Ticket Title</th>
-                <th>Ticket Description</th>
-                <th>Date Submitted</th>
-                <th>Category</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Tickets will be loaded dynamically from database -->
-              <tr>
-                <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
-                  Loading tickets...
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            <table class="mgmt-table tickets-table hidden" data-status="open">
+              <thead>
+                <tr>
+                  <th>Ticket Title</th>
+                  <th>Ticket Description</th>
+                  <th>Date Submitted</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="6" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <table class="mgmt-table tickets-table hidden" data-status="in-progress">
+              <thead>
+                <tr>
+                  <th>Ticket Title</th>
+                  <th>Ticket Description</th>
+                  <th>Date Submitted</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="6" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <table class="mgmt-table tickets-table hidden" data-status="resolved">
+              <thead>
+                <tr>
+                  <th>Ticket Title</th>
+                  <th>Ticket Description</th>
+                  <th>Date Submitted</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="6" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
       </div>
     </section>
@@ -186,7 +220,6 @@
         <h3 class="modal-title">Assign Category</h3>
         <button class="modal-close" id="assign-modal-close" aria-label="Close dialog">×</button>
       </header>
-      <div class="modal-sub">Select a category for this support ticket</div>
 
       <div class="modal-body">
         <div class="modal-row"><strong>Ticket ID:</strong> <span class="modal-ticket-id">-</span></div>
@@ -217,7 +250,6 @@
         <h3 class="modal-title">Edit Category</h3>
         <button class="modal-close" id="edit-modal-close" aria-label="Close dialog">×</button>
       </header>
-      <div class="modal-sub">Update the category for this ticket</div>
 
       <div class="modal-body">
         <div class="modal-row"><strong>Ticket ID:</strong> <span id="edit-ticket-id">-</span></div>
@@ -276,7 +308,7 @@
           <!-- Left Side: Ticket Info -->
           <div class="conversation-info">
             <div class="info-group">
-              <h4>Ticket Details</h4>
+
               <div class="info-item">
                 <div class="info-label">Ticket ID</div>
                 <div class="info-value" id="view-ticket-id">-</div>
@@ -304,14 +336,6 @@
               <div class="info-item">
                 <div class="info-label">Created</div>
                 <div class="info-value" id="view-ticket-date">-</div>
-              </div>
-            </div>
-
-            <div class="info-group">
-              <h4>Client Information</h4>
-              <div class="info-item">
-                <div class="info-label">User ID</div>
-                <div class="info-value" id="view-client-userid">-</div>
               </div>
             </div>
           </div>

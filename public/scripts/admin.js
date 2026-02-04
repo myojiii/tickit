@@ -44,6 +44,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // ========================================
+  // TICKET STATUS TABS (Admin tickets page)
+  // ========================================
+  const ticketTabs = document.querySelectorAll('.tickets-tabs .mgmt-tab');
+  const ticketTables = document.querySelectorAll('.mgmt-table[data-status]');
+
+  const activateTicketTab = (target) => {
+    if (!target) return;
+    ticketTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.tab === target));
+    ticketTables.forEach(table => {
+      const shouldShow = table.dataset.status === target;
+      table.classList.toggle('hidden', !shouldShow);
+    });
+  };
+
+  ticketTabs.forEach(tab => {
+    tab.addEventListener('click', () => activateTicketTab(tab.dataset.tab));
+  });
+
+  // Ensure default tab shown on load
+  const initialTab = document.querySelector('.tickets-tabs .mgmt-tab.active')?.dataset.tab || 'open';
+  activateTicketTab(initialTab);
+
+  // ========================================
   // LOGOUT FUNCTIONALITY
   // ========================================
   const logoutBtn = document.getElementById('logout-btn');
@@ -599,18 +622,18 @@ notifications.forEach((notif, index) => {
   // LOAD TICKETS
   // ========================================
   const loadTickets = async () => {
-    const unassignedTbody = document.querySelector('.tickets-section:first-of-type tbody');
-    const allTicketsTbody = document.querySelector('.tickets-section:last-of-type tbody');
+    const unassignedTbody = document.querySelector('.mgmt-table[data-status="unassigned"] tbody');
+    const statusTbodies = {
+      open: document.querySelector('.mgmt-table[data-status="open"] tbody'),
+      inProgress: document.querySelector('.mgmt-table[data-status="in-progress"] tbody'),
+      resolved: document.querySelector('.mgmt-table[data-status="resolved"] tbody'),
+    };
 
     console.log('🎫 Starting to load tickets...');
-    console.log('Unassigned tbody:', unassignedTbody ? 'Found' : 'NOT FOUND');
-    console.log('All tickets tbody:', allTicketsTbody ? 'Found' : 'NOT FOUND');
 
     try {
       const res = await fetch('/api/tickets');
       console.log('📡 Response status:', res.status);
-      console.log('📡 Response OK:', res.ok);
-      
       if (!res.ok) {
         const errorText = await res.text();
         console.error('❌ Response not OK. Status:', res.status, 'Error:', errorText);
@@ -619,48 +642,36 @@ notifications.forEach((notif, index) => {
       
       const tickets = await res.json();
       console.log('✅ Fetched tickets:', tickets);
-      console.log('📊 Total tickets:', tickets.length);
-      
-      if (tickets.length > 0) {
-        console.log('🔍 Sample ticket structure:', tickets[0]);
-      }
 
       const unassigned = tickets.filter(t => !t.category || t.category.trim() === '');
       const assigned = tickets.filter(t => t.category && t.category.trim() !== '');
 
-      console.log('📋 Unassigned tickets:', unassigned.length);
-      console.log('📋 Assigned tickets:', assigned.length);
-
-      // Populate unassigned table
+      // Unassigned block
       if (unassignedTbody) {
-        if (unassigned.length === 0) {
-          console.log('ℹ️ No unassigned tickets, showing empty message');
-          unassignedTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:40px;color:#666;">No unassigned tickets</td></tr>';
-        } else {
-          console.log('✏️ Rendering', unassigned.length, 'unassigned tickets');
-          unassignedTbody.innerHTML = unassigned.map(t => `
-            <tr data-ticket-id="${escapeHtml(t.id || '')}">
-              <td>${escapeHtml(t.title || 'Untitled')}</td>
-              <td>${escapeHtml(truncateText(t.description, 100))}</td>
-              <td>${formatDate(t.date)}</td>
-              <td><button class="action-btn primary-btn assign-category-btn">Assign Category</button></td>
-            </tr>
-          `).join('');
-          attachAssignButtonListeners();
-          console.log('✅ Unassigned tickets rendered and listeners attached');
-        }
-      } else {
-        console.error('❌ Unassigned tbody element not found!');
+        unassignedTbody.innerHTML = unassigned.length
+          ? unassigned.map(t => `
+              <tr data-ticket-id="${escapeHtml(t.id || '')}">
+                <td>${escapeHtml(t.title || 'Untitled')}</td>
+                <td>${escapeHtml(truncateText(t.description, 100))}</td>
+                <td>${formatDate(t.date)}</td>
+                <td><button class="action-btn primary-btn assign-category-btn">Assign Category</button></td>
+              </tr>
+            `).join('')
+          : '<tr><td colspan="4" style="text-align:center;padding:40px;color:#666;">No unassigned tickets</td></tr>';
+        attachAssignButtonListeners();
       }
 
-      // Populate assigned table
-      if (allTicketsTbody) {
-        if (assigned.length === 0) {
-          console.log('ℹ️ No assigned tickets, showing empty message');
-          allTicketsTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#666;">No assigned tickets</td></tr>';
-        } else {
-          console.log('✏️ Rendering', assigned.length, 'assigned tickets');
-          allTicketsTbody.innerHTML = assigned.map(t => `
+      // Bucket assigned tickets by status
+      const buckets = { open: [], inProgress: [], resolved: [] };
+      assigned.forEach(t => {
+        const status = (t.status || '').trim().toLowerCase();
+        if (status === 'in progress') buckets.inProgress.push(t);
+        else if (status === 'resolved') buckets.resolved.push(t);
+        else buckets.open.push(t); // default for assigned tickets
+      });
+
+      const renderAssignedRows = (list) => list.length
+        ? list.map(t => `
             <tr data-ticket-id="${escapeHtml(t.id || '')}">
               <td>${escapeHtml(t.title || 'Untitled')}</td>
               <td>${escapeHtml(truncateText(t.description, 100))}</td>
@@ -675,29 +686,27 @@ notifications.forEach((notif, index) => {
                 </div>
               </td>
             </tr>
-          `).join('');
-          attachViewButtonListeners();
-          attachEditButtonListeners();
-          attachDeleteButtonListeners();
-          console.log('✅ Assigned tickets rendered and listeners attached');
-        }
-      } else {
-        console.error('❌ Assigned tbody element not found!');
-      }
+          `).join('')
+        : '<tr><td colspan="6" style="text-align:center;padding:40px;color:#666;">No tickets in this status</td></tr>';
+
+      if (statusTbodies.open) statusTbodies.open.innerHTML = renderAssignedRows(buckets.open);
+      if (statusTbodies.inProgress) statusTbodies.inProgress.innerHTML = renderAssignedRows(buckets.inProgress);
+      if (statusTbodies.resolved) statusTbodies.resolved.innerHTML = renderAssignedRows(buckets.resolved);
+
+      attachViewButtonListeners();
+      attachEditButtonListeners();
+      attachDeleteButtonListeners();
 
       console.log('🎉 Tickets loaded successfully');
 
     } catch (err) {
       console.error('💥 Failed to load tickets:', err);
-      console.error('Error stack:', err.stack);
-      
       if (unassignedTbody) {
         unassignedTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:#d32f2f;">Error loading tickets: ${err.message}</td></tr>`;
       }
-      if (allTicketsTbody) {
-        allTicketsTbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error loading tickets: ${err.message}</td></tr>`;
-      }
-      
+      Object.values(statusTbodies).forEach(tbody => {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error loading tickets: ${err.message}</td></tr>`;
+      });
       showNotification('Error', 'Failed to load tickets. Check console for details.', 'error');
     }
   };
