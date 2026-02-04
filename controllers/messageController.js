@@ -24,13 +24,25 @@ const postMessage = async (req, res) => {
       return res.status(400).json({ message: "senderId and message are required" });
     }
 
-    const newMessage = await MessageModel.create({
+    const messageData = {
       ticketId,
       senderId,
       senderName: senderName || "User",
       message,
       timestamp: new Date(),
-    });
+    };
+
+    // Process uploaded files
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      messageData.attachments = req.files.map(file => ({
+        filename: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+        filepath: `/uploads/messages/${file.filename}`, // Path to download/view
+      }));
+    }
+
+    const newMessage = await MessageModel.create(messageData);
 
     const ticket = await TicketModel.findById(ticketId);
 
@@ -66,7 +78,7 @@ const postMessage = async (req, res) => {
     res.status(201).json({ message: "Message sent", data: newMessage });
   } catch (err) {
     console.error("Error sending message:", err);
-    res.status(500).json({ message: "Failed to send message" });
+    res.status(500).json({ message: "Failed to send message", error: err.message });
   }
 };
 

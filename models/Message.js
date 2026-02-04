@@ -7,6 +7,14 @@ const messageSchema = new mongoose.Schema(
     senderName: String,
     message: String,
     timestamp: { type: Date, default: Date.now },
+    attachments: [
+      {
+        filename: String,
+        size: Number,
+        mimetype: String,
+        filepath: String, // URL path to download/view the file
+      }
+    ],
   },
   { collection: "messages" }
 );

@@ -391,6 +391,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     fileInput?.click();
   });
 
+  // Add tooltip to attach button
+  if (attachBtn) {
+    attachBtn.setAttribute('title', 'Attach files');
+    attachBtn.setAttribute('aria-label', 'Attach files');
+  }
+
   fileInput?.addEventListener('change', (e) => {
     const files = Array.from(e.target.files || []);
     
@@ -825,6 +831,39 @@ document.addEventListener("DOMContentLoaded", async () => {
           const senderName = isStaff ? "You" : msg.senderName || "Client";
           const cssClass = isStaff ? "reply" : "";
 
+          // Build attachments HTML if present
+          let attachmentsHtml = '';
+          if (msg.attachments && Array.isArray(msg.attachments) && msg.attachments.length > 0) {
+            attachmentsHtml = '<div class="message-attachments">' + 
+              msg.attachments.map(att => {
+                const isImage = att.mimetype && att.mimetype.startsWith('image/');
+                const downloadLink = att.filepath || '#';
+                
+                if (isImage) {
+                  // For images, show as embedded
+                  return `
+                    <div class="message-attachment image-attachment">
+                      <img src="${downloadLink}" alt="${att.filename}" style="max-width: 300px; max-height: 300px; border-radius: 6px; cursor: pointer;" onclick="window.open('${downloadLink}', '_blank')">
+                      <div class="attachment-name">${att.filename}</div>
+                    </div>
+                  `;
+                } else {
+                  // For other files, show as downloadable link
+                  return `
+                    <a href="${downloadLink}" download="${att.filename}" class="message-attachment file-attachment" title="${att.filename}">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                        <polyline points="13 2 13 9 20 9"/>
+                      </svg>
+                      <span class="attachment-name">${att.filename}</span>
+                      <span class="att-size">${formatFileSize(att.size)}</span>
+                    </a>
+                  `;
+                }
+              }).join('') +
+              '</div>';
+          }
+
           return `
             <div class="message ${cssClass}">
               <div class="message-row">
@@ -832,6 +871,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <div class="timestamp">${formatMessageDate(msg.timestamp)} ${formatMessageTime(msg.timestamp)}</div>
               </div>
               <p class="message-body">${msg.message || msg.text || ""}</p>
+              ${attachmentsHtml}
             </div>
           `;
         })
@@ -847,7 +887,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const sendStaffMessage = async () => {
     if (!composerTextarea || !ticketId || !currentStaffId) return;
     const text = composerTextarea.value.trim();
-    if (!text) return;
+    if (!text && selectedFiles.length === 0) return;
 
     try {
       // Get ticket to determine receiver (client)
@@ -860,17 +900,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const receiverId = ticket.userId; // Client is the receiver
 
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("senderId", currentStaffId);
+      formData.append("receiverId", receiverId);
+      formData.append("staffId", currentStaffId);
+      formData.append("senderName", localStorage.getItem("userName") || "Staff");
+      formData.append("message", text);
+      formData.append("timestamp", new Date().toISOString());
+      
+      // Append each file
+      selectedFiles.forEach(file => {
+        formData.append("attachments", file);
+      });
+
       const res = await fetch(`/api/tickets/${ticketId}/messages`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          senderId: currentStaffId,
-          receiverId: receiverId,
-          staffId: currentStaffId,
-          senderName: localStorage.getItem("userName") || "Staff",
-          message: text,
-          timestamp: new Date().toISOString(),
-        }),
+        body: formData,
+        // Don't set Content-Type header - browser will set it with boundary for multipart/form-data
       });
 
       if (res.ok) {
@@ -878,6 +925,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         selectedFiles = [];
         renderAttachments();
         await renderMessages();
+        showToastNotification("Success", "Message sent successfully", "success", 3000);
       } else {
         const errorData = await res.json();
         console.error("Send error:", errorData);

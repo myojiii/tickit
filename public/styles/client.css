@@ -426,10 +426,18 @@ body {
 }
 
 .chat-input {
-  padding: 20px 24px;
+  padding: 0;
   border-top: 2px solid #f0f0f0;
   display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+.chat-input > div:first-of-type {
+  padding: 20px 24px;
+  display: flex;
   gap: 12px;
+  align-items: flex-end;
 }
 
 .chat-input textarea {
@@ -448,6 +456,42 @@ body {
   border-color: #667eea;
 }
 
+.chat-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.attach-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f5f5f5;
+  color: #666;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.attach-btn:hover {
+  background: #e8e8e8;
+  color: #333;
+}
+
+.attach-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .send-btn {
   padding: 12px 24px;
   background: #667eea;
@@ -457,6 +501,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.3s;
+  white-space: nowrap;
 }
 
 .send-btn:hover {
@@ -468,6 +513,84 @@ body {
   cursor: not-allowed;
 }
 
+.attachments-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #667eea;
+}
+
+.attachment-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.attachment-icon svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.attachment-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.attachment-size {
+  color: #999;
+  font-size: 11px;
+  margin-left: auto;
+}
+
+.attachment-remove {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  transition: color 0.15s;
+}
+
+.attachment-remove:hover {
+  color: #d32f2f;
+}
+
+.attachment-remove svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  stroke-width: 3;
+}
+
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -477,4 +600,84 @@ body {
 .empty-state h3 {
   margin-bottom: 8px;
   color: #666;
+}
+
+/* Message Attachments Display */
+.message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.message-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #667eea;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.message-attachment.file-attachment {
+  display: inline-flex;
+}
+
+.message-attachment.image-attachment {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.message-attachment.image-attachment img {
+  cursor: pointer;
+}
+
+.message-attachment.image-attachment .attachment-name {
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #667eea;
+}
+
+.message-attachment:hover {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.message-attachment.image-attachment:hover {
+  background: transparent;
+  border: none;
+}
+
+.message-attachment svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  flex-shrink: 0;
+  stroke: none;
+}
+
+.attachment-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.att-size {
+  color: #999;
+  font-size: 11px;
 }
