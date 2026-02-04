@@ -218,8 +218,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (unreadCount > 0) {
         bellBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
         bellBadge.classList.add('active');
+        bellBadge.removeAttribute('data-count');
       } else {
-        bellBadge.textContent = '0';
+        bellBadge.textContent = '';
+        bellBadge.setAttribute('data-count', '0');
         bellBadge.classList.remove('active');
       }
     }
@@ -233,52 +235,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Render notifications
-// Render notifications
-notifications.forEach((notif, index) => {
-  const item = document.createElement('div');
-  item.className = `notification-item ${notif.read ? 'read' : 'unread'}`;
-  
-  // Determine notification style based on type
-  if (notif.type === 'new_ticket') {
-    item.classList.add('success');
-  } else if (notif.type === 'ticket_assigned') {
-    item.classList.add('info');
-  }
-  
-  let icon = '📋';
-  if (notif.type === 'new_ticket') icon = '🎫';
-  if (notif.type === 'ticket_assigned') icon = '📋';
-  if (notif.type === 'status_changed') icon = '🔄';
-  if (notif.type === 'priority_changed') icon = '⚠️';
+    notifications.forEach((notif, index) => {
+      const item = document.createElement('div');
+      item.className = `notification-item ${notif.read ? 'read' : 'unread'}`;
+      
+      // Determine notification style based on type
+      if (notif.type === 'new_ticket') {
+        item.classList.add('success');
+      } else if (notif.type === 'ticket_assigned') {
+        item.classList.add('info');
+      }
+      
+      // Check if this is a recently created notification (within last minute)
+      const createdTime = new Date(notif.createdAt).getTime();
+      const now = Date.now();
+      const isNew = (now - createdTime) < 60000; // Less than 1 minute old
+      if (isNew && !notif.read) {
+        item.classList.add('new-notification');
+      }
 
-  // Check if this is a recently created notification (within last minute)
-  const createdTime = new Date(notif.createdAt).getTime();
-  const now = Date.now();
-  const isNew = (now - createdTime) < 60000; // Less than 1 minute old
-  if (isNew && !notif.read) {
-    item.classList.add('new-notification');
-  }
-  
-  const iconSvg = `<div class="notification-item-icon">${icon}</div>`;
+      // Extract client name and ticket title from metadata
+      const clientName = notif.metadata?.clientName || 'Unknown';
+      const ticketTitle = notif.metadata?.ticketTitle || 'Untitled Ticket';
 
-  item.innerHTML = `
-    ${iconSvg}
-    <div class="notification-item-content">
-      <div class="notification-item-title">${notif.title}</div>
-      <div class="notification-item-message">${notif.message}</div>
-      <div class="notification-item-time">${getRelativeTime(notif.createdAt)}</div>
-    </div>
-  `;
+      item.innerHTML = `
+        <div class="notification-item-content">
+          <div class="notification-item-type">New Ticket Submitted</div>
+          <div class="notification-item-title">${ticketTitle}</div>
+          <div class="notification-item-submitter">Submitted by ${clientName}</div>
+          <div class="notification-item-time">${getRelativeTime(notif.createdAt)}</div>
+        </div>
+      `;
 
-      // Click to mark as read and navigate to ticket
+      // Click to mark as read and open ticket panel
       item.addEventListener('click', async (e) => {
         if (!notif.read) {
           await markAsRead(notif._id);
         }
-        // Navigate to the ticket detail page or reload tickets
+        // Open ticket panel with the ticket details
         if (notif.ticketId) {
-          // For admin, reload tickets to show the new one
-          await loadTickets();
+          await openTicketPanel(notif.ticketId);
         }
       });
 
@@ -333,6 +329,112 @@ notifications.forEach((notif, index) => {
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
     return date.toLocaleDateString();
+  };
+
+  // Open ticket in side panel
+  const openTicketPanel = async (ticketId) => {
+    try {
+      // Fetch ticket details
+      const response = await fetch(`/api/tickets/${ticketId}`);
+      if (!response.ok) {
+        console.error('Failed to fetch ticket details');
+        return;
+      }
+
+      const ticket = await response.json();
+
+      // Create or get panel elements
+      let panel = document.getElementById('notification-ticket-panel');
+      let overlay = document.getElementById('notification-overlay');
+
+      if (!panel) {
+        // Create panel HTML structure
+        panel = document.createElement('div');
+        panel.id = 'notification-ticket-panel';
+        panel.className = 'notification-ticket-panel';
+        panel.innerHTML = `
+          <div class="notification-ticket-panel-header">
+            <h3 class="notification-ticket-panel-title">Ticket Details</h3>
+            <button class="notification-ticket-panel-close" id="panel-close-btn" aria-label="Close panel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="notification-ticket-content" id="panel-content">
+          </div>
+          <div class="notification-ticket-actions">
+            <button class="secondary-btn" id="panel-view-full-btn">View Full Ticket</button>
+          </div>
+        `;
+        document.body.appendChild(panel);
+
+        // Create overlay
+        overlay = document.createElement('div');
+        overlay.id = 'notification-overlay';
+        overlay.className = 'notification-overlay';
+        document.body.appendChild(overlay);
+
+        // Close panel handlers
+        const closePanel = () => {
+          panel.classList.remove('open');
+          overlay.classList.remove('open');
+        };
+
+        document.getElementById('panel-close-btn').addEventListener('click', closePanel);
+        overlay.addEventListener('click', closePanel);
+
+        // View full ticket button
+        document.getElementById('panel-view-full-btn').addEventListener('click', () => {
+          closePanel();
+          window.location.href = `/admin?ticketId=${ticketId}`;
+        });
+      }
+
+      // Populate panel with ticket details
+      const contentDiv = document.getElementById('panel-content');
+      contentDiv.innerHTML = `
+        <div class="notification-ticket-field">
+          <div class="notification-ticket-field-label">Ticket ID</div>
+          <div class="notification-ticket-field-value">#${ticket._id?.substring(0, 8).toUpperCase() || 'N/A'}</div>
+        </div>
+        <div class="notification-ticket-field">
+          <div class="notification-ticket-field-label">Title</div>
+          <div class="notification-ticket-field-value">${ticket.title || 'Untitled'}</div>
+        </div>
+        <div class="notification-ticket-field">
+          <div class="notification-ticket-field-label">Client</div>
+          <div class="notification-ticket-field-value">${ticket.userId?.name || 'Unknown'}</div>
+        </div>
+        <div class="notification-ticket-field">
+          <div class="notification-ticket-field-label">Category</div>
+          <div class="notification-ticket-field-value">${ticket.category || 'N/A'}</div>
+        </div>
+        <div class="notification-ticket-field">
+          <div class="notification-ticket-field-label">Status</div>
+          <div class="notification-ticket-field-value"><span class="status-badge ${ticket.status?.toLowerCase() || 'open'}">${ticket.status || 'Open'}</span></div>
+        </div>
+        <div class="notification-ticket-field">
+          <div class="notification-ticket-field-label">Priority</div>
+          <div class="notification-ticket-field-value">${ticket.priority || 'Medium'}</div>
+        </div>
+        <div class="notification-ticket-field">
+          <div class="notification-ticket-field-label">Description</div>
+          <div class="notification-ticket-field-value">${ticket.description || 'No description provided'}</div>
+        </div>
+        <div class="notification-ticket-field">
+          <div class="notification-ticket-field-label">Submitted</div>
+          <div class="notification-ticket-field-value">${new Date(ticket.createdAt).toLocaleString()}</div>
+        </div>
+      `;
+
+      // Open panel
+      panel.classList.add('open');
+      overlay.classList.add('open');
+    } catch (error) {
+      console.error('Error opening ticket panel:', error);
+    }
   };
 
   // Initialize notification system
@@ -939,6 +1041,12 @@ notifications.forEach((notif, index) => {
         console.error('Error marking all as read:', error);
       }
     }
+  });
+
+  // View History button
+  const viewHistoryBtn = document.getElementById('view-history-btn');
+  viewHistoryBtn?.addEventListener('click', () => {
+    window.location.href = '/admin/notification-history.html';
   });
 
   document.addEventListener("click", (e) => {

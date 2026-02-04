@@ -131,14 +131,24 @@ const createTicket = async (req, res) => {
     // Create notification for all admins
     try {
       const admins = await UserModel.find({ role: { $regex: /^admin$/i } }).lean();
+      
+      // Get the user who created the ticket to include their name
+      const ticketUser = await UserModel.findById(doc.userId).lean();
+      const clientName = ticketUser?.name || 'Unknown';
+      
       for (const admin of admins) {
         await NotificationModel.create({
           staffId: admin._id.toString(),
           type: "new_ticket",
           title: "New Ticket Submitted",
-          message: `"${title}" submitted by client`,
+          message: `"${title}" submitted by ${clientName}`,
           ticketId: doc._id.toString(),
           read: false,
+          metadata: {
+            clientName: clientName,
+            ticketTitle: title,
+            ticketId: doc._id.toString()
+          }
         });
       }
     } catch (notifErr) {
@@ -173,13 +183,22 @@ const updateCategory = async (req, res) => {
     // Create notification if ticket was assigned
     if (assignment?.assigned && assignment?.staff) {
       try {
+        const ticketUser = await UserModel.findById(ticket.userId).lean();
+        const clientName = ticketUser?.name || 'Unknown';
+        const ticketTitle = ticket["ticket title"] || ticket.title || "New ticket";
+        
         await NotificationModel.create({
           staffId: assignment.staff.id,
           type: "ticket_assigned",
           title: "New Ticket Assigned",
-          message: `${ticket["ticket title"] || "New ticket"} assigned to you`,
+          message: `${ticketTitle} assigned to you`,
           ticketId: ticket._id.toString(),
           read: false,
+          metadata: {
+            clientName: clientName,
+            ticketTitle: ticketTitle,
+            ticketId: ticket._id.toString()
+          }
         });
       } catch (notifErr) {
         console.error("Error creating notification:", notifErr);
@@ -224,13 +243,22 @@ const updateTicket = async (req, res) => {
       // Create notification if ticket was assigned
       if (assignment?.assigned && assignment?.staff) {
         try {
+          const ticketUser = await UserModel.findById(ticket.userId).lean();
+          const clientName = ticketUser?.name || 'Unknown';
+          const ticketTitle = ticket["ticket title"] || ticket.title || "New ticket";
+          
           await NotificationModel.create({
             staffId: assignment.staff.id,
             type: "ticket_assigned",
             title: "New Ticket Assigned",
-            message: `${ticket["ticket title"] || "New ticket"} assigned to you`,
+            message: `${ticketTitle} assigned to you`,
             ticketId: ticket._id.toString(),
             read: false,
+            metadata: {
+              clientName: clientName,
+              ticketTitle: ticketTitle,
+              ticketId: ticket._id.toString()
+            }
           });
         } catch (notifErr) {
           console.error("Error creating notification:", notifErr);
@@ -287,6 +315,18 @@ const getTicket = async (req, res) => {
 
     if (!ticket) {
       return res.status(404).json({ message: "Ticket not found" });
+    }
+
+    // Populate user details if userId is present
+    if (ticket.userId) {
+      const user = await UserModel.findById(ticket.userId).lean();
+      if (user) {
+        ticket.userId = {
+          _id: user._id,
+          name: user.name,
+          email: user.email
+        };
+      }
     }
 
     const normalized = normalizeTicket(ticket);

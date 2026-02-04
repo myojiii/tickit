@@ -1236,7 +1236,8 @@ body {
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
 }
 
-.bell-badge:empty {
+.bell-badge:empty,
+.bell-badge[data-count="0"] {
   display: none;
 }
 
@@ -1354,6 +1355,9 @@ body {
   cursor: pointer;
   transition: background 0.2s ease;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .notification-item:last-child {
@@ -1380,30 +1384,404 @@ body {
   border-radius: 50%;
 }
 
-.notification-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-strong);
-  margin-bottom: 4px;
+.notification-item-icon {
+  display: none;
 }
 
-.notification-message {
+.notification-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notification-item-type {
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.notification-item-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #000;
+  margin: 0;
+}
+
+.notification-item-submitter {
   font-size: 13px;
   color: var(--text);
-  line-height: 1.4;
-  margin-bottom: 6px;
+  margin: 0;
 }
 
-.notification-time {
+.notification-item-time {
   font-size: 12px;
   color: var(--muted);
   font-weight: 500;
+  text-align: right;
+  align-self: flex-end;
+}
+
+/* View History Button */
+.view-history-btn {
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: white;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  text-align: center;
+  border-radius: 0 0 16px 16px;
+}
+
+.view-history-btn:hover {
+  background: #f9fafb;
+}
+
+/* Ticket Side Panel */
+.notification-ticket-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  height: 100vh;
+  background: white;
+  border-left: 1px solid var(--border);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 99;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-ticket-panel.open {
+  transform: translateX(0);
+}
+
+.notification-ticket-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  background: #f9fafb;
+}
+
+.notification-ticket-panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.notification-ticket-panel-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.notification-ticket-panel-close:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.notification-ticket-panel-close svg {
+  width: 16px;
+  height: 16px;
+  stroke: #666;
+  stroke-width: 2;
+}
+
+.notification-ticket-panel-close:hover svg {
+  stroke: #dc2626;
+}
+
+.notification-ticket-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.notification-ticket-field {
+  margin-bottom: 24px;
+}
+
+.notification-ticket-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.notification-ticket-field-value {
+  font-size: 14px;
+  color: var(--text-strong);
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.notification-ticket-actions {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+  background: #f9fafb;
+}
+
+.notification-ticket-actions button {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-ticket-actions .primary-btn {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.notification-ticket-actions .primary-btn:hover {
+  opacity: 0.9;
+}
+
+.notification-ticket-actions .secondary-btn {
+  background: white;
+  color: var(--text);
+}
+
+.notification-ticket-actions .secondary-btn:hover {
+  background: #f9fafb;
+}
+
+.notification-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 98;
+}
+
+.notification-overlay.open {
+  opacity: 1;
+  pointer-events: all;
 }
 
 /* Responsive adjustments */
+@media (max-width: 1024px) {
+  .notification-ticket-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .notifications-panel {
+    width: 95vw;
+    max-width: 420px;
+  }
+}
+
+@media (max-width: 768px) {
+  .notification-ticket-panel {
+    width: 100%;
+    max-width: 100%;
+    border-left: none;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  .notification-ticket-panel.open {
+    transform: translateY(0);
+    bottom: 0;
+    top: auto;
+    right: auto;
+    left: auto;
+  }
+
+  .notifications-panel {
+    width: calc(100vw - 24px);
+    right: 12px;
+    max-width: none;
+    max-height: 60vh;
+  }
+
+  .notification-item {
+    padding: 12px 16px;
+  }
+
+  .notification-item-type {
+    font-size: 10px;
+  }
+
+  .notification-item-title {
+    font-size: 13px;
+  }
+
+  .notification-item-submitter {
+    font-size: 12px;
+  }
+
+  .notification-ticket-content {
+    padding: 16px;
+  }
+
+  .notification-ticket-field {
+    margin-bottom: 16px;
+  }
+
+  .notification-ticket-actions {
+    padding: 16px;
+  }
+
+  .notification-ticket-actions button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
 @media (max-width: 480px) {
   .notifications-panel {
     width: calc(100vw - 24px);
     right: 12px;
+    max-height: 70vh;
+  }
+
+  .notifications-list {
+    max-height: calc(70vh - 120px);
+  }
+
+  .bell-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .bell-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .notification-item {
+    padding: 12px 12px;
+  }
+
+  .notification-item-type {
+    font-size: 9px;
+    letter-spacing: 0px;
+  }
+
+  .notification-item-title {
+    font-size: 12px;
+  }
+
+  .notification-item-submitter {
+    font-size: 11px;
+  }
+
+  .notification-item-time {
+    font-size: 11px;
+  }
+
+  .notification-ticket-panel {
+    width: 100%;
+    height: 100%;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+  }
+
+  .notification-ticket-panel.open {
+    transform: translateY(0);
+    bottom: 0;
+    top: auto;
+  }
+
+  .notification-ticket-panel-header {
+    padding: 16px;
+  }
+
+  .notification-ticket-panel-title {
+    font-size: 16px;
+  }
+
+  .notification-ticket-content {
+    padding: 12px;
+  }
+
+  .notification-ticket-field {
+    margin-bottom: 12px;
+  }
+
+  .notification-ticket-field-label {
+    font-size: 11px;
+  }
+
+  .notification-ticket-field-value {
+    font-size: 13px;
+  }
+
+  .notification-ticket-actions {
+    padding: 12px;
+    flex-direction: column-reverse;
+  }
+
+  .notification-ticket-actions button {
+    padding: 12px;
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .view-history-btn {
+    padding: 16px 20px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 320px) {
+  .notifications-panel {
+    width: calc(100vw - 16px);
+    right: 8px;
+  }
+
+  .notification-item {
+    padding: 10px 8px;
+  }
+
+  .notification-item-type {
+    font-size: 8px;
+  }
+
+  .notification-item-title {
+    font-size: 11px;
+  }
+
+  .notification-ticket-panel-close {
+    width: 28px;
+    height: 28px;
+  }
+
+  .notification-ticket-panel-close svg {
+    width: 14px;
+    height: 14px;
   }
 }
