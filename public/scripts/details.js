@@ -671,22 +671,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const fetchUser = async (userId) => {
     try {
+      updateDebug(`Fetching user: /api/users/id/${userId}`);
       const res = await fetch(`/api/users/id/${encodeURIComponent(userId)}`);
-      if (!res.ok) throw new Error("Failed to load user");
-      const user = await res.json();
-      const isClient = normalize(user.role) === "client";
-      if (isClient) {
-        if (contactNameEl) contactNameEl.textContent = user.name || "N/A";
-        if (contactEmailEl) contactEmailEl.textContent = user.email || "N/A";
-        const phoneVal = user.number || user.phone;
-        if (contactPhoneEl) contactPhoneEl.textContent = phoneVal || "Not provided";
-      } else {
-        if (contactNameEl) contactNameEl.textContent = "N/A";
-        if (contactEmailEl) contactEmailEl.textContent = "N/A";
-        if (contactPhoneEl) contactPhoneEl.textContent = "Not provided";
+      updateDebug(`User fetch response: ${res.status}`);
+      
+      if (!res.ok) {
+        throw new Error(`Failed to load user: ${res.status}`);
       }
+      
+      const user = await res.json();
+      updateDebug(`User data received: ${user.name || 'Unknown'}`);
+      console.log('User data:', user);
+      
+      // Display user information regardless of role
+      if (contactNameEl) contactNameEl.textContent = user.name || "N/A";
+      if (contactEmailEl) contactEmailEl.textContent = user.email || "N/A";
+      const phoneVal = user.number || user.phone;
+      if (contactPhoneEl) contactPhoneEl.textContent = phoneVal || "Not provided";
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching user:', err);
+      updateDebug(`User fetch error: ${err.message}`);
       if (contactNameEl) contactNameEl.textContent = "N/A";
       if (contactEmailEl) contactEmailEl.textContent = "N/A";
       if (contactPhoneEl) contactPhoneEl.textContent = "Not provided";
