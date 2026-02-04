@@ -1,19 +1,11 @@
 import { Router } from "express";
 import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
-import cloudinary from "cloudinary";
+import path from "path";
+import fs from "fs";
 import { getMessages, postMessage, markTicketNotificationsRead } from "../controllers/messageController.js";
 
 const router = Router();
 
-<<<<<<< HEAD
-// Configure Cloudinary
-cloudinary.v2.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-=======
 // Configure multer for file uploads
 // Use /tmp on Vercel (read-only fs) and public/uploads locally
 const uploadDir = process.env.VERCEL
@@ -27,15 +19,14 @@ try {
 } catch (err) {
   console.error("Failed to create upload directory:", uploadDir, err);
 }
->>>>>>> d50ed4a6f97a124b4f42b283dd12c1e09ffc7162
 
-// Configure multer with Cloudinary storage
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary.v2,
-  params: {
-    folder: "tickit/messages",
-    resource_type: "auto",
-    allowed_formats: ["jpg", "jpeg", "png", "gif", "svg", "pdf", "doc", "docx", "txt", "webp"],
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}_${file.originalname.replace(/\s+/g, "_")}`;
+    cb(null, uniqueName);
   },
 });
 
@@ -45,16 +36,19 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB per file
   },
   fileFilter: (req, file, cb) => {
-    // Allow only specific file types
-    const allowedTypes = ['image/*', 'application/pdf', 'application/msword', 
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
-      'text/plain'];
-    
-    const isAllowed = allowedTypes.some(type => {
-      if (type === 'image/*') return file.mimetype.startsWith('image/');
+    const allowedTypes = [
+      "image/*",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+    ];
+
+    const isAllowed = allowedTypes.some((type) => {
+      if (type === "image/*") return file.mimetype.startsWith("image/");
       return file.mimetype === type;
     });
-    
+
     if (isAllowed) {
       cb(null, true);
     } else {
