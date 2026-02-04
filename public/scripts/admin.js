@@ -70,19 +70,44 @@ document.addEventListener('DOMContentLoaded', async () => {
   // LOGOUT FUNCTIONALITY
   // ========================================
   const logoutBtn = document.getElementById('logout-btn');
+  const logoutModal = document.getElementById('logout-modal');
+  const logoutConfirmBtn = document.getElementById('logout-confirm-btn');
+  const logoutCancelBtn = document.getElementById('logout-cancel-btn');
+  const logoutCloseBtn = document.getElementById('logout-modal-close');
+
+  const openLogoutModal = () => logoutModal?.classList.remove('hidden');
+  const closeLogoutModal = () => logoutModal?.classList.add('hidden');
+
+  const performLogout = () => {
+    localStorage.removeItem('sidebarCollapsed');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userRole');
+    window.location.href = '/';
+  };
 
   logoutBtn?.addEventListener('click', () => {
-    // Show confirmation dialog
+    if (logoutModal) {
+      openLogoutModal();
+      return;
+    }
+
     const confirmLogout = confirm('Are you sure you want to logout?');
-    
     if (confirmLogout) {
-      // Clear any stored session data
-      localStorage.removeItem('sidebarCollapsed');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('userRole');
-      
-      // Redirect to login page
-      window.location.href = '/';
+      performLogout();
+    }
+  });
+
+  logoutConfirmBtn?.addEventListener('click', () => {
+    closeLogoutModal();
+    performLogout();
+  });
+
+  logoutCancelBtn?.addEventListener('click', closeLogoutModal);
+  logoutCloseBtn?.addEventListener('click', closeLogoutModal);
+
+  logoutModal?.addEventListener('click', (event) => {
+    if (event.target === logoutModal) {
+      closeLogoutModal();
     }
   });
 
@@ -334,6 +359,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Open ticket in side panel
   const openTicketPanel = async (ticketId) => {
     try {
+      // Close notifications panel first
+      const notificationsPanel = document.getElementById('notifications-panel');
+      if (notificationsPanel) {
+        notificationsPanel.classList.add('hidden');
+      }
+
       // Fetch ticket details
       const response = await fetch(`/api/tickets/${ticketId}`);
       if (!response.ok) {
@@ -394,10 +425,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Populate panel with ticket details
       const contentDiv = document.getElementById('panel-content');
+      
+      // Format the date properly
+      let formattedDate = 'N/A';
+      if (ticket.date) {
+        try {
+          const dateObj = new Date(ticket.date);
+          if (!isNaN(dateObj.getTime())) {
+            formattedDate = dateObj.toLocaleString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: true
+            });
+          }
+        } catch (e) {
+          formattedDate = 'N/A';
+        }
+      }
+
       contentDiv.innerHTML = `
         <div class="notification-ticket-field">
           <div class="notification-ticket-field-label">Ticket ID</div>
-          <div class="notification-ticket-field-value">#${ticket._id?.substring(0, 8).toUpperCase() || 'N/A'}</div>
+          <div class="notification-ticket-field-value">#${ticket.id || 'N/A'}</div>
         </div>
         <div class="notification-ticket-field">
           <div class="notification-ticket-field-label">Title</div>
@@ -425,7 +478,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
         <div class="notification-ticket-field">
           <div class="notification-ticket-field-label">Submitted</div>
-          <div class="notification-ticket-field-value">${new Date(ticket.createdAt).toLocaleString()}</div>
+          <div class="notification-ticket-field-value">${formattedDate}</div>
         </div>
       `;
 

@@ -4,7 +4,7 @@ import NotificationModel from "../models/Notifications.js";
 export const getNotifications = async (req, res) => {
   try {
     const { staffId } = req.params;
-    const { unreadOnly, limit = 50 } = req.query;
+    const { unreadOnly, limit = 20, skip = 0 } = req.query;
 
     if (!staffId) {
       return res.status(400).json({ message: "staffId is required" });
@@ -15,9 +15,12 @@ export const getNotifications = async (req, res) => {
       filter.read = false;
     }
 
+    const total = await NotificationModel.countDocuments(filter);
+
     const notifications = await NotificationModel.find(filter)
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
+      .skip(parseInt(skip))
       .lean();
 
     const unreadCount = await NotificationModel.countDocuments({
@@ -28,6 +31,13 @@ export const getNotifications = async (req, res) => {
     res.json({
       notifications,
       unreadCount,
+      pagination: {
+        total,
+        limit: parseInt(limit),
+        skip: parseInt(skip),
+        pages: Math.ceil(total / parseInt(limit)),
+        currentPage: Math.floor(parseInt(skip) / parseInt(limit)) + 1,
+      },
     });
   } catch (err) {
     console.error("Error fetching notifications:", err);

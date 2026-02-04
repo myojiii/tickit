@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TickIT | Notification History</title>
   <link rel="stylesheet" href="/styles/admin.css">
+  <link rel="stylesheet" href="/styles/admin-modals.css">
   <style>
     /* Notification History Specific Styles */
     .history-container {
@@ -346,6 +347,21 @@
     </section>
   </div>
 
+  <!-- Logout Modal -->
+  <div class="modal-overlay hidden" id="logout-modal" role="dialog" aria-modal="true">
+    <div class="modal-card compact" role="document">
+      <header class="modal-header">
+        <h3 class="modal-title">Logout</h3>
+        <button class="modal-close" id="logout-modal-close" aria-label="Close dialog">×</button>
+      </header>
+      <div class="modal-sub">Are you sure you want to logout?</div>
+      <footer class="modal-footer">
+        <button class="modal-btn" id="logout-cancel-btn">Cancel</button>
+        <button class="modal-btn danger" id="logout-confirm-btn">Logout</button>
+      </footer>
+    </div>
+  </div>
+
   <div class="notification-container" id="notification-container"></div>
 
   <script>
@@ -357,6 +373,10 @@
       const paginationContainer = document.getElementById('pagination-container');
       const backBtn = document.getElementById('back-btn');
       const logoutBtn = document.getElementById('logout-btn');
+      const logoutModal = document.getElementById('logout-modal');
+      const logoutConfirmBtn = document.getElementById('logout-confirm-btn');
+      const logoutCancelBtn = document.getElementById('logout-cancel-btn');
+      const logoutCloseBtn = document.getElementById('logout-modal-close');
 
       let currentFilter = 'all';
       let currentPage = 1;
@@ -372,7 +392,7 @@
         }
 
         try {
-          const response = await fetch(`/api/staff/${adminId}/notifications?limit=1000`);
+          const response = await fetch(`/api/staff/${adminId}/notifications?limit=500`);
           if (response.ok) {
             const data = await response.json();
             allNotifications = data.notifications || [];
@@ -494,13 +514,38 @@
         window.history.back();
       });
 
+      const openLogoutModal = () => logoutModal?.classList.remove('hidden');
+      const closeLogoutModal = () => logoutModal?.classList.add('hidden');
+
+      const performLogout = () => {
+        localStorage.removeItem('sidebarCollapsed');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userRole');
+        window.location.href = '/';
+      };
+
       logoutBtn.addEventListener('click', () => {
+        if (logoutModal) {
+          openLogoutModal();
+          return;
+        }
+
         const confirmLogout = confirm('Are you sure you want to logout?');
         if (confirmLogout) {
-          localStorage.removeItem('sidebarCollapsed');
-          localStorage.removeItem('userId');
-          localStorage.removeItem('userRole');
-          window.location.href = '/';
+          performLogout();
+        }
+      });
+
+      logoutConfirmBtn?.addEventListener('click', () => {
+        closeLogoutModal();
+        performLogout();
+      });
+
+      logoutCancelBtn?.addEventListener('click', closeLogoutModal);
+      logoutCloseBtn?.addEventListener('click', closeLogoutModal);
+      logoutModal?.addEventListener('click', (event) => {
+        if (event.target === logoutModal) {
+          closeLogoutModal();
         }
       });
 

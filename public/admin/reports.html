@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TickIT | Reports Dashboard</title>
   <link rel="stylesheet" href="/styles/admin.css">
+  <link rel="stylesheet" href="/styles/admin-modals.css">
   <link rel="stylesheet" href="/styles/reports.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -349,6 +350,21 @@
         </section>
       </div>
     </section>
+  </div>
+
+  <!-- Logout Modal -->
+  <div class="modal-overlay hidden" id="logout-modal" role="dialog" aria-modal="true">
+    <div class="modal-card compact" role="document">
+      <header class="modal-header">
+        <h3 class="modal-title">Logout</h3>
+        <button class="modal-close" id="logout-modal-close" aria-label="Close dialog">×</button>
+      </header>
+      <div class="modal-sub">Are you sure you want to logout?</div>
+      <footer class="modal-footer">
+        <button class="modal-btn" id="logout-cancel-btn">Cancel</button>
+        <button class="modal-btn danger" id="logout-confirm-btn">Logout</button>
+      </footer>
+    </div>
   </div>
 
   <div class="notification-container" id="notification-container"></div>

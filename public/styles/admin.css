@@ -1442,26 +1442,32 @@ body {
   background: #f9fafb;
 }
 
-/* Ticket Side Panel */
+/* Ticket Modal Overlay */
 .notification-ticket-panel {
   position: fixed;
-  top: 0;
-  right: 0;
-  width: 420px;
-  height: 100vh;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
   background: white;
-  border-left: 1px solid var(--border);
-  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
-  z-index: 99;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  z-index: 101;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
 .notification-ticket-panel.open {
-  transform: translateX(0);
+  opacity: 1;
+  pointer-events: all;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .notification-ticket-panel-header {
@@ -1579,11 +1585,11 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.3);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
-  z-index: 98;
+  z-index: 100;
 }
 
 .notification-overlay.open {
@@ -1594,8 +1600,8 @@ body {
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .notification-ticket-panel {
-    width: 100%;
-    max-width: 100%;
+    width: 95%;
+    max-width: 550px;
   }
 
   .notifications-panel {
@@ -1606,18 +1612,9 @@ body {
 
 @media (max-width: 768px) {
   .notification-ticket-panel {
-    width: 100%;
-    max-width: 100%;
-    border-left: none;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
-  }
-
-  .notification-ticket-panel.open {
-    transform: translateY(0);
-    bottom: 0;
-    top: auto;
-    right: auto;
-    left: auto;
+    width: 95%;
+    max-width: 500px;
+    max-height: 80vh;
   }
 
   .notifications-panel {
@@ -1662,6 +1659,12 @@ body {
 }
 
 @media (max-width: 480px) {
+  .notification-ticket-panel {
+    width: 95%;
+    max-width: calc(100vw - 24px);
+    max-height: 90vh;
+  }
+
   .notifications-panel {
     width: calc(100vw - 24px);
     right: 12px;
@@ -1701,19 +1704,6 @@ body {
 
   .notification-item-time {
     font-size: 11px;
-  }
-
-  .notification-ticket-panel {
-    width: 100%;
-    height: 100%;
-    border-radius: 16px 16px 0 0;
-    overflow: hidden;
-  }
-
-  .notification-ticket-panel.open {
-    transform: translateY(0);
-    bottom: 0;
-    top: auto;
   }
 
   .notification-ticket-panel-header {
@@ -1761,6 +1751,11 @@ body {
   .notifications-panel {
     width: calc(100vw - 16px);
     right: 8px;
+  }
+
+  .notification-ticket-panel {
+    width: 100%;
+    max-height: 95vh;
   }
 
   .notification-item {

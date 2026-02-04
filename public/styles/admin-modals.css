@@ -35,6 +35,10 @@
   max-width: 900px;
 }
 
+.modal-card.compact {
+  max-width: 420px;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
