@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TickIT | Notification History</title>
+  <link rel="stylesheet" href="/styles/staff.css">
+  <style>
+    /* Notification History Specific Styles */
+    .main-content {
+      overflow-y: auto;
+      height: 100vh;
+    }
+
+    .history-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      padding-top: 20px;
+    }
+
+    .history-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-strong);
+    }
+
+    .history-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .history-back-btn:hover {
+      background: #f9fafb;
+      border-color: #cbd5e1;
+    }
+
+    .history-filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .history-filter-btn {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .history-filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .history-filter-btn:hover {
+      border-color: var(--primary);
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .history-item {
+      padding: 16px 20px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item:hover {
+      border-color: var(--primary);
+      background: #f9fafb;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .history-item.unread {
+      border-left: 3px solid var(--primary);
+    }
+
+    .history-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .history-item-type {
+      font-size: 11px;
+      color: #9ca3af;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .history-item-time {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .history-item-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #000;
+    }
+
+    .history-item-meta {
+      font-size: 13px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .history-item-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .history-item-status.read {
+      color: #10b981;
+    }
+
+    .history-item-status.unread {
+      color: var(--primary);
+    }
+
+    .history-empty {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .history-empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .history-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 32px;
+      padding-bottom: 40px;
+    }
+
+    .pagination-btn {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: #f9fafb;
+      border-color: var(--primary);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pagination-info {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 0 12px;
+    }
+
+    @media (max-width: 768px) {
+      .history-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      .history-filters {
+        width: 100%;
+      }
+
+      .history-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .history-item-time {
+        align-self: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <!-- Toggle Button -->
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg viewBox="0 0 24 24" class="toggle-icon">
+          <path d="M15 18l-6-6 6-6"></path>
+        </svg>
+      </button>
+
+      <div class="sidebar-top">
+        <div class="brand">
+          <img src="/assets/logo.png" alt="TickIT logo" class="logo">
+          <div class="brand-text">
+            <div class="brand-name">TickIT</div>
+            <div class="brand-sub">Ticketing System</div>
+          </div>
+        </div>
+
+        <nav class="nav-menu">
+          <button class="nav-btn" type="button" data-tooltip="My Tickets" onclick="window.location.href='/staff'">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"></path>
+              </svg>
+            </span>
+            <span class="nav-label">My Tickets</span>
+          </button>
+
+          <button class="nav-btn active" type="button" data-tooltip="Notifications">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Notifications</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="user-card">
+          <div class="user-avatar" id="user-avatar">S</div>
+          <div class="user-details">
+            <div class="user-name" id="user-name">Staff User</div>
+            <div class="user-email" id="user-email">staff@example.com</div>
+          </div>
+        </div>
+
+        <button class="btn-icon" id="logout-btn" data-tooltip="Logout">
+          <svg viewBox="0 0 24 24">
+            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"></path>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="history-container">
+        <div class="history-header">
+          <h1 class="history-title">Notification History</h1>
+          <button class="history-back-btn" id="back-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
+            </svg>
+            Back
+          </button>
+        </div>
+
+        <div class="history-filters">
+          <button class="history-filter-btn active" data-filter="all">All</button>
+          <button class="history-filter-btn" data-filter="unread">Unread</button>
+          <button class="history-filter-btn" data-filter="ticket_assigned">Assigned</button>
+          <button class="history-filter-btn" data-filter="new_message">Messages</button>
+          <button class="history-filter-btn" data-filter="status_changed">Status Changed</button>
+        </div>
+
+        <div class="history-list" id="history-list">
+          <!-- Notifications will be loaded here -->
+        </div>
+
+        <div class="history-pagination" id="pagination" style="display: none;">
+          <button class="pagination-btn" id="prev-btn">← Previous</button>
+          <span class="pagination-info">
+            Page <span id="current-page">1</span> of <span id="total-pages">1</span>
+          </span>
+          <button class="pagination-btn" id="next-btn">Next →</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const historyList = document.getElementById('history-list');
+      const filterBtns = document.querySelectorAll('.history-filter-btn');
+      const backBtn = document.getElementById('back-btn');
+      const paginationContainer = document.getElementById('pagination');
+      const logoutBtn = document.getElementById('logout-btn');
+
+      let allNotifications = [];
+      let filteredNotifications = [];
+      let currentFilter = 'all';
+      let currentPage = 1;
+      const itemsPerPage = 10;
+
+      // Load user info
+      const userId = localStorage.getItem('userId');
+      const userName = localStorage.getItem('userName') || 'Staff User';
+      const userEmail = localStorage.getItem('userEmail') || 'staff@example.com';
+      
+      document.getElementById('user-name').textContent = userName;
+      document.getElementById('user-email').textContent = userEmail;
+      document.getElementById('user-avatar').textContent = userName.charAt(0).toUpperCase();
+
+      // Load all notifications
+      const loadAllNotifications = async () => {
+        try {
+          historyList.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--muted);">Loading notifications...</div>';
+
+          const response = await fetch(`/api/staff/${userId}/notifications`);
+          if (!response.ok) {
+            throw new Error('Failed to fetch notifications');
+          }
+
+          const data = await response.json();
+          allNotifications = data.notifications || [];
+          filteredNotifications = allNotifications;
+          
+          renderNotifications();
+        } catch (error) {
+          console.error('Error loading notifications:', error);
+          historyList.innerHTML = '<div style="padding: 40px; text-align: center; color: #ef4444;">Failed to load notifications</div>';
+        }
+      };
+
+      // Filter notifications
+      const filterNotifications = (filter) => {
+        currentFilter = filter;
+        currentPage = 1;
+
+        if (filter === 'all') {
+          filteredNotifications = allNotifications;
+        } else if (filter === 'unread') {
+          filteredNotifications = allNotifications.filter(n => !n.read);
+        } else {
+          filteredNotifications = allNotifications.filter(n => n.type === filter);
+        }
+
+        renderNotifications();
+      };
+
+      // Render notifications
+      const renderNotifications = () => {
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const pageNotifications = filteredNotifications.slice(start, end);
+
+        if (filteredNotifications.length === 0) {
+          historyList.innerHTML = '<div class="history-empty"><div class="history-empty-icon">📭</div><p>No notifications found</p></div>';
+          paginationContainer.style.display = 'none';
+          return;
+        }
+
+        historyList.innerHTML = pageNotifications.map(notif => `
+          <div class="history-item ${notif.read ? '' : 'unread'}" onclick="openTicketDetail('${notif.ticketId}')">
+            <div class="history-item-header">
+              <span class="history-item-type">${getTypeLabel(notif.type)}</span>
+              <span class="history-item-time">${getFullDate(notif.createdAt)}</span>
+            </div>
+            <div class="history-item-title">${notif.metadata?.ticketTitle || notif.title || 'Untitled'}</div>
+            <div class="history-item-meta">
+              <span>by ${notif.metadata?.clientName || 'Unknown'}</span>
+              <span class="history-item-status ${notif.read ? 'read' : 'unread'}">
+                ${notif.read ? '✓ Read' : '● Unread'}
+              </span>
+            </div>
+          </div>
+        `).join('');
+
+        // Update pagination
+        const totalPages = Math.ceil(filteredNotifications.length / itemsPerPage);
+        if (totalPages > 1) {
+          paginationContainer.style.display = 'flex';
+          document.getElementById('current-page').textContent = currentPage;
+          document.getElementById('total-pages').textContent = totalPages;
+          document.getElementById('prev-btn').disabled = currentPage === 1;
+          document.getElementById('next-btn').disabled = currentPage === totalPages;
+        } else {
+          paginationContainer.style.display = 'none';
+        }
+      };
+
+      // Helper functions
+      const getTypeLabel = (type) => {
+        const labels = {
+          'new_ticket': 'New Ticket',
+          'ticket_assigned': 'Assigned',
+          'status_changed': 'Status Changed',
+          'priority_changed': 'Priority Changed',
+          'new_message': 'New Message'
+        };
+        return labels[type] || type;
+      };
+
+      const getFullDate = (timestamp) => {
+        const date = new Date(timestamp);
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      };
+
+      // Event listeners
+      filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          filterBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          filterNotifications(btn.dataset.filter);
+        });
+      });
+
+      document.getElementById('prev-btn').addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderNotifications();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+
+      document.getElementById('next-btn').addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredNotifications.length / itemsPerPage);
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderNotifications();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+
+      backBtn.addEventListener('click', () => {
+        window.history.back();
+      });
+
+      logoutBtn.addEventListener('click', () => {
+        const confirmLogout = confirm('Are you sure you want to logout?');
+        if (confirmLogout) {
+          localStorage.removeItem('sidebarCollapsed');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('userRole');
+          localStorage.removeItem('userName');
+          localStorage.removeItem('userEmail');
+          window.location.href = '/';
+        }
+      });
+
+      // Global function to open ticket detail
+      window.openTicketDetail = async (ticketId) => {
+        // Navigate to ticket details page
+        window.location.href = `/staff/details.html?id=${ticketId}`;
+      };
+
+      // Sidebar toggle
+      const sidebar = document.querySelector('.sidebar');
+      const layout = document.querySelector('.layout');
+      const toggleBtn = document.getElementById('sidebar-toggle');
+      
+      const savedState = localStorage.getItem('sidebarCollapsed');
+      if (savedState === 'true') {
+        sidebar.classList.add('collapsed');
+        layout.classList.add('sidebar-collapsed');
+      }
+      
+      toggleBtn?.addEventListener('click', () => {
+        sidebar?.classList.toggle('collapsed');
+        layout?.classList.toggle('sidebar-collapsed');
+        const isCollapsed = sidebar?.classList.contains('collapsed');
+        localStorage.setItem('sidebarCollapsed', isCollapsed);
+      });
+
+      // Load notifications on page load
+      await loadAllNotifications();
+    });
+  </script>
+</body>
+</html>

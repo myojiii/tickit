@@ -156,11 +156,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Update badge
     if (bellBadge) {
+      bellBadge.setAttribute('data-count', unreadCount);
       if (unreadCount > 0) {
         bellBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
         bellBadge.classList.add('active');
       } else {
-        bellBadge.textContent = '0';
+        bellBadge.textContent = '';
         bellBadge.classList.remove('active');
       }
     }
@@ -173,8 +174,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    // Limit to 5 most recent notifications
+    const recentNotifications = notifications.slice(0, 5);
+
     // Render notifications
-    notifications.forEach((notif, index) => {
+    recentNotifications.forEach((notif, index) => {
       const item = document.createElement('div');
       item.className = `notification-item ${notif.read ? 'read' : 'unread'}`;
       
@@ -184,12 +188,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else if (notif.type === 'ticket_assigned') {
         item.classList.add('info');
       }
-      
-      let icon = '📋';
-      if (notif.type === 'new_message') icon = '💬';
-      if (notif.type === 'ticket_assigned') icon = '📋';
-      if (notif.type === 'status_changed') icon = '🔄';
-      if (notif.type === 'priority_changed') icon = '⚠️';
 
       // Check if this is a recently created notification (within last minute)
       const createdTime = new Date(notif.createdAt).getTime();
@@ -198,24 +196,45 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (isNew && !notif.read) {
         item.classList.add('new-notification');
       }
-      
-      const iconSvg = `<div class="notification-item-icon">${icon}</div>`;
+
+      // Determine type label
+      let typeLabel = 'New Message';
+      if (notif.type === 'new_message') typeLabel = 'New Message';
+      else if (notif.type === 'ticket_assigned') typeLabel = 'Ticket Assigned';
+      else if (notif.type === 'status_changed') typeLabel = 'Status Changed';
+      else if (notif.type === 'priority_changed') typeLabel = 'Priority Changed';
+
+      // Extract metadata
+      const clientName = notif.metadata?.clientName || 'Unknown';
+      const ticketTitle = notif.metadata?.ticketTitle || notif.title || 'Untitled Ticket';
+      const messagePreview = notif.message || '';
+
+      // Helper function for relative time
+      const getRelativeTime = (timestamp) => {
+        const now = Date.now();
+        const time = new Date(timestamp).getTime();
+        const diff = now - time;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+        
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        return `${days}d ago`;
+      };
       
       item.innerHTML = `
-        ${iconSvg}
         <div class="notification-item-content">
-          <div class="notification-item-title">${notif.title}</div>
-          <div class="notification-item-message">${notif.message}</div>
-          <div class="notification-item-time">${new Date(notif.createdAt).toLocaleDateString()}</div>
+          <div class="notification-item-type">${typeLabel}</div>
+          <div class="notification-item-title">${ticketTitle}</div>
+          <div class="notification-item-submitter">${messagePreview}</div>
+          <div class="notification-item-time">${getRelativeTime(notif.createdAt)}</div>
         </div>
-        <button class="notification-item-close" aria-label="Remove notification">
-          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
-        </button>
       `;
 
       // Click to mark as read and navigate to ticket
       item.addEventListener('click', async (e) => {
-        if (e.target.closest('.notification-item-close')) return;
         if (!notif.read) {
           await markAsRead(notif._id);
         }
@@ -225,15 +244,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       });
 
-      // Delete button
-      const closeBtn = item.querySelector('.notification-item-close');
-      closeBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        await deleteNotification(notif._id);
-      });
-
       notificationsList.appendChild(item);
     });
+
+    // Add "View All History" button if there are more than 5 notifications
+    if (notifications.length > 5) {
+      const viewAllBtn = document.createElement('button');
+      viewAllBtn.className = 'view-all-history-btn';
+      viewAllBtn.textContent = 'View All History';
+      viewAllBtn.addEventListener('click', () => {
+        window.location.href = '/staff/notification-history.html';
+      });
+      notificationsList.appendChild(viewAllBtn);
+    }
   };
 
   // Mark notification as read
