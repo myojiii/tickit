@@ -7,9 +7,17 @@ import { getMessages, postMessage, markTicketNotificationsRead } from "../contro
 const router = Router();
 
 // Configure multer for file uploads
-const uploadDir = "public/uploads/messages";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Use /tmp on Vercel (read-only fs) and public/uploads locally
+const uploadDir = process.env.VERCEL
+  ? path.join(process.env.TMPDIR || "/tmp", "uploads", "messages")
+  : path.join("public", "uploads", "messages");
+
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.error("Failed to create upload directory:", uploadDir, err);
 }
 
 const storage = multer.diskStorage({
