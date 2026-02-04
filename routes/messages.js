@@ -1,25 +1,25 @@
 import { Router } from "express";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary from "cloudinary";
 import { getMessages, postMessage, markTicketNotificationsRead } from "../controllers/messageController.js";
 
 const router = Router();
 
-// Configure multer for file uploads
-const uploadDir = "public/uploads/messages";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Configure Cloudinary
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Create unique filename: timestamp_originalname
-    const uniqueName = `${Date.now()}_${file.originalname.replace(/\s+/g, '_')}`;
-    cb(null, uniqueName);
+// Configure multer with Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary.v2,
+  params: {
+    folder: "tickit/messages",
+    resource_type: "auto",
+    allowed_formats: ["jpg", "jpeg", "png", "gif", "svg", "pdf", "doc", "docx", "txt", "webp"],
   },
 });
 

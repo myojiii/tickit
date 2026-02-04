@@ -825,6 +825,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   };
 
+  let userIsScrolling = false;
+  let scrollTimeout = null;
+
   const renderMessages = async () => {
     if (!messagesContainer || !ticketId) return;
 
@@ -864,13 +867,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             attachmentsHtml = '<div class="message-attachments">' + 
               msg.attachments.map(att => {
                 const isImage = att.mimetype && att.mimetype.startsWith('image/');
-                const downloadLink = att.filepath || '#';
+                let downloadLink = att.filepath || '#';
+                // Ensure proper path handling for images on deployed servers
+                if (downloadLink && !downloadLink.startsWith('http') && !downloadLink.startsWith('/')) {
+                  downloadLink = '/' + downloadLink;
+                }
                 
                 if (isImage) {
                   // For images, show as embedded
                   return `
                     <div class="message-attachment image-attachment">
-                      <img src="${downloadLink}" alt="${att.filename}" style="max-width: 300px; max-height: 300px; border-radius: 6px; cursor: pointer;" onclick="window.open('${downloadLink}', '_blank')">
+                      <img src="${downloadLink}" alt="${att.filename}" style="max-width: 300px; max-height: 300px; border-radius: 6px; cursor: pointer;" onclick="window.open('${downloadLink}', '_blank')" onerror="this.alt='Failed to load image'">
                       <div class="attachment-name">${att.filename}</div>
                     </div>
                   `;
@@ -904,8 +911,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         })
         .join("");
 
-      // Scroll to bottom
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      // Only scroll to bottom if user is not actively scrolling
+      if (!userIsScrolling) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
     } catch (err) {
       console.error("Error loading messages:", err);
     }
@@ -979,6 +988,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Load messages on page load and poll every 5 seconds (only if ticketId exists)
   if (ticketId) {
+    // Track user scrolling to prevent auto-scroll when manually scrolling
+    messagesContainer?.addEventListener('scroll', () => {
+      userIsScrolling = true;
+      clearTimeout(scrollTimeout);
+      // Stop considering it as scrolling after 3 seconds of no scroll
+      scrollTimeout = setTimeout(() => {
+        userIsScrolling = false;
+      }, 3000);
+    });
+
     await renderMessages();
     setInterval(renderMessages, 5000);
   }

@@ -32,13 +32,13 @@ const postMessage = async (req, res) => {
       timestamp: new Date(),
     };
 
-    // Process uploaded files
+    // Process uploaded files from Cloudinary
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       messageData.attachments = req.files.map(file => ({
-        filename: file.originalname,
+        filename: file.originalname || file.filename,
         size: file.size,
         mimetype: file.mimetype,
-        filepath: `/uploads/messages/${file.filename}`, // Path to download/view
+        filepath: file.secure_url, // Cloudinary returns secure_url for the file
       }));
     }
 
