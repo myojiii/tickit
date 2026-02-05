@@ -56,6 +56,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (data.userId) {
           localStorage.setItem("userId", data.userId);
         }
+        if (data.role) {
+          localStorage.setItem("userRole", data.role);
+        }
         if (payload.email) {
           localStorage.setItem("userEmail", payload.email);
         }

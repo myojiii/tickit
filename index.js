@@ -10,6 +10,7 @@ import messageRoutes from "./routes/messages.js";
 import { ensureAssignedTicketsOpen } from "./lib/ticketHelpers.js";
 import notificationRoutes from "./routes/notifications.js";
 import reportRoutes from "./routes/reports.js";
+import { requireAuth } from "./middleware/auth.js";
 
 dotenv.config();
 
@@ -20,10 +21,19 @@ const MONGO_URL =
 const rootDir = process.cwd();
 
 app.use(express.json());
-app.use(express.static(path.join(rootDir, "public")));
-app.use("/staff", express.static(path.join(rootDir, "public", "staff")));
+
+// Public routes (no auth required)
+app.use("/auth", express.static(path.join(rootDir, "public", "auth")));
+app.use("/scripts/auth-guard.js", express.static(path.join(rootDir, "public", "scripts", "auth-guard.js")));
+app.use("/styles", express.static(path.join(rootDir, "public", "styles")));
+app.use("/assets", express.static(path.join(rootDir, "public", "assets")));
+
+// Protected static routes (auth required for HTML pages)
 app.use("/admin", express.static(path.join(rootDir, "public", "admin")));
+app.use("/staff", express.static(path.join(rootDir, "public", "staff")));
 app.use("/client", express.static(path.join(rootDir, "public", "client")));
+app.use("/scripts", express.static(path.join(rootDir, "public", "scripts")));
+app.use("/modals", express.static(path.join(rootDir, "public", "modals")));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(rootDir, "public", "auth", "login.html"));
@@ -41,7 +51,8 @@ mongoose
   });
 
 // Routes
-app.use(authRoutes);
+app.use(authRoutes); // No auth required for login
+app.use("/api", requireAuth); // Protect all API routes
 app.use(userRoutes);
 app.use(categoryRoutes);
 app.use(ticketRoutes);
