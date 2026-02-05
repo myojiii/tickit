@@ -388,6 +388,59 @@
   color: #1f2d4a;
 }
 
+.message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.message-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  text-decoration: none;
+  color: #111827;
+  max-width: 100%;
+}
+
+.message-attachment svg {
+  width: 18px;
+  height: 18px;
+  stroke: #6b7280;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.message-attachment .attachment-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.message-attachment .att-size {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.message-attachment.image-attachment {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 10px;
+}
+
+.message-attachment.image-attachment img {
+  max-width: 280px;
+  max-height: 280px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: block;
+}
+
 @keyframes slideInMessage {
   from {
     opacity: 0;

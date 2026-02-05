@@ -564,6 +564,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       "'": '&#39;',
     }[c] || c));
 
+  const formatFileSize = (bytes) => {
+    if (!bytes && bytes !== 0) return '';
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
+
   const getStatusClass = (status) =>
     status ? status.toLowerCase().replace(/\s+/g, '-') : '';
 
@@ -597,6 +606,41 @@ document.addEventListener('DOMContentLoaded', async () => {
       const time = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : '';
       const safeMessage = escapeHtml(msg.message || '');
 
+      let attachmentsHtml = '';
+      if (msg.attachments && Array.isArray(msg.attachments) && msg.attachments.length > 0) {
+        attachmentsHtml = '<div class="message-attachments">' +
+          msg.attachments.map(att => {
+            const isImage = att.mimetype && att.mimetype.startsWith('image/');
+            let downloadLink = att.filepath || '#';
+            if (downloadLink && !downloadLink.startsWith('http') && !downloadLink.startsWith('/')) {
+              downloadLink = '/' + downloadLink;
+            }
+            const safeFilename = escapeHtml(att.filename || 'attachment');
+            const sizeLabel = formatFileSize(att.size);
+
+            if (isImage) {
+              return `
+                <div class="message-attachment image-attachment">
+                  <img src="${downloadLink}" alt="${safeFilename}" onclick="window.open('${downloadLink}', '_blank')" onerror="this.alt='Failed to load image'">
+                  <div class="attachment-name">${safeFilename}</div>
+                </div>
+              `;
+            }
+
+            return `
+              <a href="${downloadLink}" download="${safeFilename}" class="message-attachment file-attachment" title="${safeFilename}">
+                <svg viewBox="0 0 24 24">
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                  <polyline points="13 2 13 9 20 9"/>
+                </svg>
+                <span class="attachment-name">${safeFilename}</span>
+                ${sizeLabel ? `<span class="att-size">${sizeLabel}</span>` : ''}
+              </a>
+            `;
+          }).join('') +
+          '</div>';
+      }
+
       return `
         <div class="message ${senderClass}">
           <div class="message-header">
@@ -604,6 +648,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="message-time">${time}</div>
           </div>
           <div class="message-content">${safeMessage}</div>
+          ${attachmentsHtml}
         </div>
       `;
     }).join('');

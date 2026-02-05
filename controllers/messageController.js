@@ -1,6 +1,43 @@
+import { v2 as cloudinary } from "cloudinary";
 import MessageModel from "../models/Message.js";
 import TicketModel from "../models/Ticket.js";
 import NotificationModel from "../models/Notifications.js";
+
+const useCloudinary =
+  !!process.env.CLOUDINARY_CLOUD_NAME &&
+  !!process.env.CLOUDINARY_API_KEY &&
+  !!process.env.CLOUDINARY_API_SECRET;
+
+if (useCloudinary) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
+
+const uploadToCloudinary = (file) => {
+  return new Promise((resolve, reject) => {
+    const base = (file.originalname || "file")
+      .replace(/\s+/g, "_")
+      .replace(/[^a-zA-Z0-9._-]/g, "");
+    const publicId = `${Date.now()}_${base}`;
+
+    const upload = cloudinary.uploader.upload_stream(
+      {
+        folder: "tickit/messages",
+        resource_type: "auto",
+        public_id: publicId,
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+
+    upload.end(file.buffer);
+  });
+};
 
 const getMessages = async (req, res) => {
   try {
@@ -32,14 +69,32 @@ const postMessage = async (req, res) => {
       timestamp: new Date(),
     };
 
-    // Process uploaded files from Cloudinary
+    // Process uploaded files from Cloudinary or local disk
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-      messageData.attachments = req.files.map(file => ({
-        filename: file.originalname || file.filename,
-        size: file.size,
-        mimetype: file.mimetype,
-        filepath: file.secure_url, // Cloudinary returns secure_url for the file
-      }));
+      if (useCloudinary) {
+        const uploads = await Promise.all(
+          req.files.map(async (file) => {
+            const result = await uploadToCloudinary(file);
+            return {
+              filename: file.originalname || result.original_filename,
+              size: file.size,
+              mimetype: file.mimetype,
+              filepath: result.secure_url,
+            };
+          })
+        );
+        messageData.attachments = uploads;
+      } else {
+        messageData.attachments = req.files.map((file) => {
+          const localUrl = file.filename ? `/uploads/messages/${file.filename}` : undefined;
+          return {
+            filename: file.originalname || file.filename,
+            size: file.size,
+            mimetype: file.mimetype,
+            filepath: localUrl,
+          };
+        });
+      }
     }
 
     const newMessage = await MessageModel.create(messageData);

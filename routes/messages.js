@@ -7,28 +7,39 @@ import { getMessages, postMessage, markTicketNotificationsRead } from "../contro
 const router = Router();
 
 // Configure multer for file uploads
-// Use /tmp on Vercel (read-only fs) and public/uploads locally
-const uploadDir = process.env.VERCEL
-  ? path.join(process.env.TMPDIR || "/tmp", "uploads", "messages")
-  : path.join("public", "uploads", "messages");
+const useCloudinary =
+  !!process.env.CLOUDINARY_CLOUD_NAME &&
+  !!process.env.CLOUDINARY_API_KEY &&
+  !!process.env.CLOUDINARY_API_SECRET;
 
-try {
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+let storage;
+
+if (useCloudinary) {
+  storage = multer.memoryStorage();
+} else {
+  // Use /tmp on Vercel (read-only fs) and public/uploads locally
+  const uploadDir = process.env.VERCEL
+    ? path.join(process.env.TMPDIR || "/tmp", "uploads", "messages")
+    : path.join("public", "uploads", "messages");
+
+  try {
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+  } catch (err) {
+    console.error("Failed to create upload directory:", uploadDir, err);
   }
-} catch (err) {
-  console.error("Failed to create upload directory:", uploadDir, err);
-}
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}_${file.originalname.replace(/\s+/g, "_")}`;
-    cb(null, uniqueName);
-  },
-});
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueName = `${Date.now()}_${file.originalname.replace(/\s+/g, "_")}`;
+      cb(null, uniqueName);
+    },
+  });
+}
 
 const upload = multer({
   storage,
