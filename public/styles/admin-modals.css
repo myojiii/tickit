@@ -324,16 +324,17 @@
   color: #0f172a;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
   animation: slideInMessage 0.25s ease;
+  align-self: flex-start;
 }
 
 .message.staff {
-  margin-left: auto;
+  align-self: flex-end;
   background: #f0f3ff;
   border-color: #d6dcf3;
 }
 
 .message.client {
-  margin-right: auto;
+  align-self: flex-start;
   background: #ffffff;
   border-color: #e4e8f0;
 }
