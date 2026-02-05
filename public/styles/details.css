@@ -696,10 +696,15 @@ body {
   flex-direction: column;
   transition: right 0.3s ease-in-out;
   z-index: 1000;
+  user-select: none;
+}
+
+.conversation-panel.dragging {
+  transition: none !important;
 }
 
 .conversation-panel.active {
-  right: 0;
+  transition: right 0.3s ease-in-out;
 }
 
 .conversation-panel-header {
@@ -709,6 +714,7 @@ body {
   padding: 16px 18px;
   border-bottom: 1px solid #e5e9f0;
   flex-shrink: 0;
+  cursor: move;
 }
 
 .conv-title {

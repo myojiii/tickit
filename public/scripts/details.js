@@ -458,15 +458,83 @@ document.addEventListener("DOMContentLoaded", async () => {
   const toggle = document.getElementById("toggle-convo");
   const convo = document.getElementById("conversation-card");
   const closeBtn = document.getElementById("close-panel-btn");
+  const header = document.querySelector(".conversation-panel-header");
+
+  // Drag functionality with persistent position
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartRight = 0;
+  let currentPosition = 0; // Track current position in memory
+
+  const STORAGE_KEY = "conversationPanelPosition";
+
+  // Load saved position from localStorage
+  const loadSavedPosition = () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const position = JSON.parse(saved);
+      currentPosition = position.right;
+      return position.right;
+    }
+    return 0; // Default: panel fully visible
+  };
+
+  // Save position to localStorage
+  const savePosition = (rightValue) => {
+    currentPosition = rightValue;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ right: rightValue }));
+  };
+
+  // Apply position to panel
+  const applyPosition = (rightValue) => {
+    convo.style.right = rightValue + "px";
+    currentPosition = rightValue;
+  };
+
+  if (header) {
+    header.addEventListener("mousedown", (e) => {
+      // Don't drag when clicking the close button
+      if (e.target.closest(".close-panel-btn")) return;
+
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartRight = currentPosition;
+      convo.classList.add("dragging");
+    });
+  }
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging || !convo.classList.contains("active")) return;
+
+    const deltaX = e.clientX - dragStartX;
+    const newRight = dragStartRight - deltaX;
+    const maxRight = window.innerWidth - 250; // Min width constraint
+    const minRight = -400 + 100; // Max drag in
+
+    const constrainedRight = Math.max(Math.min(newRight, maxRight), minRight);
+    applyPosition(constrainedRight);
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (isDragging) {
+      isDragging = false;
+      convo.classList.remove("dragging");
+      savePosition(currentPosition);
+    }
+  });
 
   if (toggle && convo) {
     toggle.addEventListener("click", () => {
       if (convo.classList.contains("active")) {
         convo.classList.remove("active");
+        convo.style.right = "-400px";
         toggle.textContent = "View Conversation";
       } else {
         convo.classList.add("active");
         toggle.textContent = "Hide Conversation";
+        // Restore saved position immediately
+        const savedRight = loadSavedPosition();
+        applyPosition(savedRight);
       }
     });
   }
@@ -474,6 +542,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (closeBtn && convo) {
     closeBtn.addEventListener("click", () => {
       convo.classList.remove("active");
+      convo.style.right = "-400px";
       toggle.textContent = "View Conversation";
     });
   }
@@ -821,6 +890,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let userIsScrolling = false;
   let scrollTimeout = null;
+  let lastMessagesSnapshot = null;
 
   const renderMessages = async () => {
     if (!messagesContainer || !ticketId) return;
@@ -848,6 +918,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       allMessages.push(...messages);
+
+      // Check if messages changed - only re-render if they did
+      const snapshot = JSON.stringify(allMessages);
+      if (snapshot === lastMessagesSnapshot) {
+        return; // No changes, skip re-render
+      }
+      lastMessagesSnapshot = snapshot;
 
       messagesContainer.innerHTML = allMessages
         .map((msg) => {
@@ -905,7 +982,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         })
         .join("");
 
-      // Only scroll to bottom if user is not actively scrolling
+      // Only scroll to bottom if user is not actively scrolling and it's a new message
       if (!userIsScrolling) {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       }
