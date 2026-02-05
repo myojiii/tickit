@@ -636,18 +636,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const fetchTicket = async () => {
     try {
-      updateDebug(`Fetching: /api/tickets/${ticketId}`);
       const res = await fetch(`/api/tickets/${ticketId}`);
-      updateDebug(`Response: ${res.status} ${res.statusText}`);
-      console.log('Response status:', res.status);
       
       if (!res.ok) {
         throw new Error(`Failed to load ticket: ${res.status} ${res.statusText}`);
       }
       
       const data = await res.json();
-      updateDebug(`Ticket received: ${data?.title || 'Unknown'}`);
-      console.log('Ticket data received:', data);
       
       if (!data || !data.id) {
         throw new Error("Invalid ticket data received");
@@ -657,7 +652,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (data?.userId) await fetchUser(data.userId);
     } catch (err) {
       console.error('Error fetching ticket:', err);
-      updateDebug(`Error: ${err.message}`);
       const heroTitleEl = document.querySelector(".hero-title");
       if (heroTitleEl) {
         heroTitleEl.textContent = "Error loading ticket";
@@ -671,17 +665,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const fetchUser = async (userId) => {
     try {
-      updateDebug(`Fetching user: /api/users/id/${userId}`);
       const res = await fetch(`/api/users/id/${encodeURIComponent(userId)}`);
-      updateDebug(`User fetch response: ${res.status}`);
       
       if (!res.ok) {
-        throw new Error(`Failed to load user: ${res.status}`);
+        setFallbackContact();
+        return;
       }
       
       const user = await res.json();
-      updateDebug(`User data received: ${user.name || 'Unknown'}`);
-      console.log('User data:', user);
       
       // Display user information regardless of role
       if (contactNameEl) contactNameEl.textContent = user.name || "N/A";
@@ -690,11 +681,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (contactPhoneEl) contactPhoneEl.textContent = phoneVal || "Not provided";
     } catch (err) {
       console.error('Error fetching user:', err);
-      updateDebug(`User fetch error: ${err.message}`);
-      if (contactNameEl) contactNameEl.textContent = "N/A";
-      if (contactEmailEl) contactEmailEl.textContent = "N/A";
-      if (contactPhoneEl) contactPhoneEl.textContent = "Not provided";
+      setFallbackContact();
     }
+  };
+
+  const setFallbackContact = () => {
+    if (contactNameEl) contactNameEl.textContent = "N/A";
+    if (contactEmailEl) contactEmailEl.textContent = "N/A";
+    if (contactPhoneEl) contactPhoneEl.textContent = "Not provided";
   };
 
   const updateTicket = async (payload) => {

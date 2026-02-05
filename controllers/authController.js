@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import UserModel from "../models/User.js";
 import { normalizeText } from "../lib/ticketHelpers.js";
 
@@ -40,11 +41,12 @@ const getUserById = async (req, res) => {
 
   try {
     let user = null;
-
-    if (id && id.length === 24) {
+    try {
       user = await UserModel.findById(id).lean();
-    } else {
-      user = await UserModel.findById(id).lean();
+    } catch (err) {
+      if (err.name !== "CastError") throw err;
+      // Non-ObjectId value; treat as not found
+      user = null;
     }
 
     if (user) {

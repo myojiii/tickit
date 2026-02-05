@@ -14,7 +14,7 @@ import reportRoutes from "./routes/reports.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 7000;
+const PORT = process.env.PORT || 3000;
 const MONGO_URL =
   process.env.MONGO_URL || "mongodb://localhost:27017/Ticketing";
 const rootDir = process.cwd();

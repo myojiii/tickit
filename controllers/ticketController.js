@@ -317,19 +317,21 @@ const getTicket = async (req, res) => {
       return res.status(404).json({ message: "Ticket not found" });
     }
 
-    // Populate user details if userId is present
+    let userInfo = null;
     if (ticket.userId) {
       const user = await UserModel.findById(ticket.userId).lean();
       if (user) {
-        ticket.userId = {
-          _id: user._id,
-          name: user.name,
-          email: user.email
+        userInfo = {
+          id: user._id.toString(),
+          name: user.name || "",
+          email: user.email || "",
         };
+        ticket.userId = user._id.toString(); // keep as string for client code
       }
     }
 
     const normalized = normalizeTicket(ticket);
+    if (userInfo) normalized.user = userInfo;
 
     res.json(normalized);
   } catch (err) {
