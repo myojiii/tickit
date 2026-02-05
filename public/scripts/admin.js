@@ -526,12 +526,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     stopMessagesPolling();
     viewTicketId = null;
     viewTicketUserId = null;
+    viewTicketStaffId = null;
     lastMessagesSnapshot = null;
   };
 
   let viewMessagesTimer = null;
   let viewTicketId = null;
   let viewTicketUserId = null;
+  let viewTicketStaffId = null;
 
   // ========================================
   // HELPERS
@@ -579,9 +581,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     messagesList.innerHTML = messages.map(msg => {
-      const isClient = viewTicketUserId && msg.senderId === viewTicketUserId;
-      const senderClass = isClient ? 'client' : 'staff';
-      const senderName = escapeHtml(msg.senderName || (isClient ? 'Client' : 'Staff'));
+      const senderNameRaw = msg.senderName || '';
+      const isStaff =
+        (viewTicketStaffId && msg.senderId === viewTicketStaffId) ||
+        /staff/i.test(senderNameRaw);
+      const isClient =
+        (!isStaff && viewTicketUserId && msg.senderId === viewTicketUserId) ||
+        (!isStaff && /client/i.test(senderNameRaw));
+
+      const senderClass = isStaff ? 'staff' : 'client';
+      const senderName = escapeHtml(
+        senderNameRaw ||
+        (isStaff ? 'Staff' : 'Client')
+      );
       const time = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : '';
       const safeMessage = escapeHtml(msg.message || '');
 
@@ -719,6 +731,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
           viewTicketId = ticket.id || null;
           viewTicketUserId = ticket.userId || null;
+          viewTicketStaffId = ticket.assignedStaffId || null;
           renderMessages([]);
 
           const viewTicketIdEl = document.getElementById('view-ticket-id');
