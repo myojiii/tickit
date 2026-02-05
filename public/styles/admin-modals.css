@@ -321,10 +321,14 @@
 
 .messages-list .message.staff {
   align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
 }
 
 .messages-list .message.client {
   align-self: flex-start;
+  margin-right: auto;
+  margin-left: 0;
 }
 
 .message {
