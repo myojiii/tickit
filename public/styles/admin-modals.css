@@ -323,6 +323,10 @@
   align-self: flex-end;
 }
 
+.messages-list .message.client {
+  align-self: flex-start;
+}
+
 .message {
   display: inline-block;
   max-width: 82%;
