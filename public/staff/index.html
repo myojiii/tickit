@@ -91,12 +91,25 @@
 
       <div class="scroll-area">
         <section class="tickets-table-card">
-          <div class="tickets-card-head">
+          <div class="tickets-card-head stacked">
             <div>
               <div class="tickets-title">Tickets</div>
               <div class="tickets-sub">View every ticket by queue position or status</div>
             </div>
-            <div class="priority-filter">
+            <div class="view-toggle">
+              <button class="view-toggle-btn active" data-view="list" aria-label="List view">List View</button>
+              <button class="view-toggle-btn" data-view="kanban" aria-label="Kanban view">Kanban View</button>
+            </div>
+          </div>
+
+          <div class="tabs-and-priority">
+            <div class="tickets-tabs tabs-oval">
+              <button class="ticket-tab active" data-status="all">All</button>
+              <button class="ticket-tab" data-status="open">Open</button>
+              <button class="ticket-tab" data-status="in progress">In Progress</button>
+              <button class="ticket-tab" data-status="resolved">Resolved</button>
+            </div>
+            <div class="priority-filter inline">
               <label for="priority-filter" class="priority-label">Priority</label>
               <select id="priority-filter" class="priority-select">
                 <option value="all">All</option>
@@ -105,13 +118,6 @@
                 <option value="Low">Low</option>
               </select>
             </div>
-          </div>
-
-          <div class="tickets-tabs tabs-oval">
-            <button class="ticket-tab active" data-status="all">All</button>
-            <button class="ticket-tab" data-status="open">Open</button>
-            <button class="ticket-tab" data-status="in progress">In Progress</button>
-            <button class="ticket-tab" data-status="resolved">Resolved</button>
           </div>
 
           <div class="table-wrap">

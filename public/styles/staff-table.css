@@ -29,10 +29,16 @@
 
 .tabs-and-priority {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  margin-top: 6px;
+  margin-top: 8px;
+}
+
+.priority-filter.inline {
+  margin-left: auto;
+  display: inline-flex;
 }
 
 .tickets-tabs {
@@ -92,6 +98,36 @@
   align-items: center;
   gap: 10px;
   margin-top: 0;
+  margin-left: 12px;
+}
+
+.view-toggle {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.view-toggle-btn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #d8dfea;
+  background: #fff;
+  color: #4b5563;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.view-toggle-btn.active {
+  background: #ee4036;
+  border-color: #ee4036;
+  color: #fff;
+  box-shadow: 0 8px 16px rgba(238, 64, 54, 0.22);
+}
+
+.view-toggle-btn:hover {
+  background: #fbb019;
+  color: #ffffff;
 }
 
 .priority-label {
