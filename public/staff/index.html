@@ -7,6 +7,7 @@
   <script src="/scripts/auth-guard.js"></script>
   <script src="/scripts/api-interceptor.js"></script>
   <link rel="stylesheet" href="/styles/staff.css">
+  <link rel="stylesheet" href="/styles/staff-table.css">
 </head>
 <body>
   <div class="layout">
@@ -89,52 +90,48 @@
       </header>
 
       <div class="scroll-area">
-        <section class="tickets">
-          <header class="section-head">
-            <div class="section-title">My Tickets</div>
-            <div class="section-sub">Track and manage your support requests</div>
-          </header>
-
-          <div class="filters">
-            <div class="filter dropdown">
-              <button class="filter-btn" id="category-toggle" type="button">
-                <span class="filter-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M4.75 5.5h14.5l-5.9 6.8v4.7l-2.7 1.5v-6.2L4.75 5.5Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
-                  </svg>
-                </span>
-                <span id="category-label"></span>
-                <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m8.5 10 3.5 3.5L15.5 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
-                </svg>
-              </button>
-              <div class="dropdown-menu hidden" id="category-menu"></div>
+        <section class="tickets-table-card">
+          <div class="tickets-card-head">
+            <div>
+              <div class="tickets-title">Tickets</div>
+              <div class="tickets-sub">View every ticket by queue position or status</div>
             </div>
-
-            <div class="filter dropdown">
-              <button class="filter-btn" id="status-toggle" type="button">
-                <span id="status-label">All Statuses</span>
-                <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m8.5 10 3.5 3.5L15.5 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
-                </svg>
-              </button>
-              <div class="dropdown-menu hidden" id="status-menu"></div>
+            <div class="priority-filter">
+              <label for="priority-filter" class="priority-label">Priority</label>
+              <select id="priority-filter" class="priority-select">
+                <option value="all">All</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
             </div>
           </div>
 
-          <!-- Pagination -->
-          <div class="ticket-pagination" id="ticket-pagination" style="display: none;">
-            <button class="pagination-btn" id="prev-page-btn">← Previous</button>
-            <span class="pagination-info">
-              Page <span id="current-page-num">1</span> of <span id="total-pages-num">1</span>
-            </span>
-            <button class="pagination-btn" id="next-page-btn">Next →</button>
+          <div class="tickets-tabs tabs-oval">
+            <button class="ticket-tab active" data-status="all">All</button>
+            <button class="ticket-tab" data-status="open">Open</button>
+            <button class="ticket-tab" data-status="in progress">In Progress</button>
+            <button class="ticket-tab" data-status="resolved">Resolved</button>
           </div>
 
-          <!-- Tickets will be loaded dynamically here -->
-          <article class="ticket-card" style="text-align: center; padding: 40px;">
-            <p>Loading tickets...</p>
-          </article>
+          <div class="table-wrap">
+            <table class="tickets-table-staff">
+              <thead>
+                <tr>
+                  <th>Ticket ID</th>
+                  <th>Ticket Title</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Priority</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="staff-tickets-body">
+                <tr><td colspan="7" style="text-align:center;padding:32px;color:#667085;">Loading tickets...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </section>
       </div>
     </section>

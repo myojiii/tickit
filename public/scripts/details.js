@@ -547,6 +547,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  // Close conversation when clicking outside the panel (desktop)
+  document.addEventListener("mousedown", (e) => {
+    if (!convo) return;
+    const clickedInside = convo.contains(e.target) || toggle?.contains(e.target);
+    if (!clickedInside && convo.classList.contains("active")) {
+      convo.classList.remove("active");
+      convo.style.right = "-400px";
+      if (toggle) toggle.textContent = "View Conversation";
+    }
+  });
+
   // Mark all notifications for a specific ticket as read
   const markTicketNotificationsAsRead = async (ticketIdToMark) => {
     if (!ticketIdToMark) return;
@@ -610,6 +621,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   const assignedEl = document.getElementById("detail-assigned-staff");
+  const assignedByEl = document.getElementById("detail-assigned-by");
   const statusEl = document.getElementById("detail-status");
   const statusBox = document.getElementById("detail-status-box");
   const priorityEl = document.getElementById("detail-priority");
@@ -688,6 +700,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (assignedEl) {
       assignedEl.textContent = ticket.assignedStaffName || "Unassigned";
+    }
+    if (assignedByEl) {
+      assignedByEl.textContent = ticket.assignedByName || "Admin";
     }
     if (statusEl) {
       statusEl.textContent = statusText;

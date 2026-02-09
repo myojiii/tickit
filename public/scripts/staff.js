@@ -310,20 +310,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ========================================
   // TICKET FILTERING AND DISPLAY
   // ========================================
-  const menu = document.querySelector("#category-menu");
-  const toggle = document.querySelector("#category-toggle");
-  const label = document.querySelector("#category-label");
-  const statusMenu = document.querySelector("#status-menu");
-  const statusToggle = document.querySelector("#status-toggle");
-  const statusLabel = document.querySelector("#status-label");
-  const ticketsSection = document.querySelector(".tickets");
+  const ticketsTableBody = document.getElementById("staff-tickets-body");
+  const ticketsTabs = document.querySelectorAll(".ticket-tab");
+  const priorityFilter = document.getElementById("priority-filter");
 
   let ticketsCache = [];
-
-  const closeMenu = () => menu?.classList.add("hidden");
-  const openMenu = () => menu?.classList.remove("hidden");
-  const closeStatusMenu = () => statusMenu?.classList.add("hidden");
-  const openStatusMenu = () => statusMenu?.classList.remove("hidden");
+  let filteredTickets = [];
+  let currentTab = "all";
 
   const normalize = (value = "") => value.toString().trim().toLowerCase();
 
@@ -336,19 +329,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   };
 
-  // ========================================
-  // PAGINATION VARIABLES
-  // ========================================
-  let currentPage = 1;
-  const itemsPerPage = 10;
-  let filteredTickets = [];
-
   const statusPillClass = (status = "") => {
     const s = normalize(status);
     if (s.includes("progress")) return "in-progress";
     if (s.includes("resolved")) return "resolved";
     if (s.includes("open") || s.includes("pending")) return "open";
-    return "in-progress";
+    return "unassigned";
+  };
+
+  const mapStatusForFilter = (status = "") => {
+    const s = normalize(status);
+    if (s.includes("progress")) return "in progress";
+    if (s.includes("resolved")) return "resolved";
+    if (s.includes("open") || s.includes("pending")) return "open";
+    if (!s) return "unassigned";
+    return s;
   };
 
   const priorityPillClass = (priority = "") => {
@@ -359,123 +354,51 @@ document.addEventListener("DOMContentLoaded", async () => {
     return "";
   };
 
-  const clearTicketCards = () => {
-    ticketsSection?.querySelectorAll(".ticket-card")?.forEach((card) => card.remove());
-  };
-
-  const updatePagination = () => {
-    const paginationContainer = document.getElementById('ticket-pagination');
-    const currentPageNum = document.getElementById('current-page-num');
-    const totalPagesNum = document.getElementById('total-pages-num');
-    const prevBtn = document.getElementById('prev-page-btn');
-    const nextBtn = document.getElementById('next-page-btn');
-
-    if (!paginationContainer) return;
-
-    const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
-
-    if (totalPages > 1) {
-      paginationContainer.style.display = 'flex';
-      currentPageNum.textContent = currentPage;
-      totalPagesNum.textContent = totalPages;
-      prevBtn.disabled = currentPage === 1;
-      nextBtn.disabled = currentPage === totalPages;
-    } else {
-      paginationContainer.style.display = 'none';
-    }
-  };
+  const clearTicketCards = () => {}; // not used in table mode
+  const updatePagination = () => {}; // pagination hidden in table mode
 
   const renderTickets = (tickets) => {
-    if (!ticketsSection) return;
-    clearTicketCards();
-
-    // Store filtered tickets for pagination
-    filteredTickets = tickets;
-
-    // Calculate pagination
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    const pageTickets = tickets.slice(start, end);
+    if (!ticketsTableBody) return;
+    ticketsTableBody.innerHTML = "";
 
     if (!Array.isArray(tickets) || tickets.length === 0) {
-      const empty = document.createElement("article");
-      empty.className = "ticket-card";
-      empty.innerHTML = `
-        <div class="ticket-info">
-          <div class="ticket-row">
-            <div class="ticket-id">No Tickets</div>
-          </div>
-          <h3 class="ticket-title">No tickets have been assigned to you yet.</h3>
-          <div class="ticket-meta">
-            <span class="meta-text">Assignments will appear here after an admin categorizes a ticket.</span>
-          </div>
-        </div>
-      `;
-      ticketsSection.appendChild(empty);
-      updatePagination();
+      ticketsTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:#667085;">No tickets found</td></tr>`;
       return;
     }
 
-    pageTickets.forEach((ticket) => {
-      const article = document.createElement("article");
-      article.className = "ticket-card";
-
-      const statusText = ticket.status || "Pending";
+    tickets.forEach((ticket) => {
+      const statusText = ticket.status || "Unassigned";
       const priorityText = ticket.priority || "Not Set";
       const statusClass = statusPillClass(statusText);
       const priorityClass = priorityPillClass(priorityText);
-      const statusGreen = normalize(statusText) === "resolved";
-      const priorityGreen = normalize(priorityText) === "low";
-      const greenBg = "#d8f5e3";
-      const greenText = "#1f7a3f";
 
-      // Check if this ticket has unread notifications
-      const unreadNotifications = notifications.filter(n => 
-        n.ticketId === ticket.id && !n.read
-      );
-      const hasUnread = unreadNotifications.length > 0;
-
-      article.innerHTML = `
-        <div class="ticket-info">
-          <div class="ticket-row">
-            <div class="ticket-id">${buildTicketId(ticket.id)}</div>
-            ${hasUnread ? '<span class="ticket-notification-badge" title="New notifications"></span>' : ''}
-            <div class="pill ${statusClass}" style="${statusGreen ? `background:${greenBg};color:${greenText};` : ""}">${statusText}</div>
-            ${priorityText ? `<div class="pill ${priorityClass || ""}" style="${priorityGreen ? `background:${greenBg};color:${greenText};` : ""}">${priorityText}</div>` : ""}
-          </div>
-          <h3 class="ticket-title">${ticket.title || "Untitled Ticket"}</h3>
-          <div class="ticket-meta">
-            <span class="meta-text">${ticket.category || "Uncategorized"}</span>
-            <span class="dot-sep">•</span>
-            <span class="meta-text">${formatDate(ticket.date)}</span>
-          </div>
-        </div>
-        <a href="/staff/details.html?ticketId=${encodeURIComponent(ticket.id || "")}" class="ghost-btn" role="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 6c-4.24 0-7.79 2.53-9.5 6 1.71 3.47 5.26 6 9.5 6s7.79-2.53 9.5-6c-1.71-3.47-5.26-6-9.5-6Zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4a4 4 0 0 1 0 8Zm0-1.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"></path>
-          </svg>
-          <span>View Details</span>
-        </a>
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${ticket.id ? buildTicketId(ticket.id) : "—"}</td>
+        <td>${ticket.title || "Untitled"}</td>
+        <td>${ticket.category || "Uncategorized"}</td>
+        <td><span class="table-status ${statusClass}" aria-label="${statusText.toLowerCase()}">${statusText}</span></td>
+        <td>${priorityText ? `<span class="table-priority ${priorityClass}">${priorityText}</span>` : "—"}</td>
+        <td>${formatDate(ticket.date)}</td>
+        <td><a class="table-action-btn" href="/staff/details.html?ticketId=${encodeURIComponent(ticket.id || "")}">View Details</a></td>
       `;
-
-      ticketsSection.appendChild(article);
+      ticketsTableBody.appendChild(tr);
     });
-
-    updatePagination();
   };
 
   const applyFilters = () => {
     currentPage = 1; // Reset to first page when filters change
-    const selectedPriority = (label?.textContent || "All Priorities").trim();
-    const selectedStatus = (statusLabel?.textContent || "All Statuses").trim();
+    const selectedPriority = (priorityFilter?.value || "all").toLowerCase();
+    const selectedStatus = currentTab;
 
     let filtered = ticketsCache.filter((ticket) => {
+      const mappedStatus = mapStatusForFilter(ticket.status);
       const priorityPass =
-        selectedPriority === "All Priorities" ||
+        selectedPriority === "all" ||
         normalize(ticket.priority) === normalize(selectedPriority);
       const statusPass =
-        selectedStatus === "All Statuses" ||
-        normalize(ticket.status) === normalize(selectedStatus);
+        selectedStatus === "all" ||
+        normalize(mappedStatus) === normalize(selectedStatus);
       return priorityPass && statusPass;
     });
 
@@ -489,89 +412,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       return 0;
     });
 
+    filteredTickets = filtered;
     renderTickets(filtered);
   };
 
-  const buildItem = (name) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "dropdown-item";
-    button.textContent = name;
-    button.addEventListener("click", () => {
-      if (label) label.textContent = name;
-      closeMenu();
-      applyFilters();
-    });
-    return button;
-  };
-
-  const renderCategories = (names) => {
-    if (!menu) return;
-    menu.innerHTML = "";
-
-    const allBtn = buildItem("All Priorities");
-    menu.appendChild(allBtn);
-
-    let added = 0;
-    names.forEach((name) => {
-      if (typeof name === "string" && name.trim()) {
-        menu.appendChild(buildItem(name.trim()));
-        added += 1;
-      }
-    });
-
-    if (added === 0) {
-      const empty = document.createElement("div");
-      empty.className = "dropdown-empty";
-      empty.textContent = "No priorities found";
-      menu.appendChild(empty);
-    }
-  };
-
   const fetchCategories = async () => {
-    const priorities = ["Low", "Medium", "High"];
-    renderCategories(priorities);
-    if (label) label.textContent = "All Priorities";
-  };
-
-  const renderStatuses = () => {
-    if (!statusMenu) return;
-    const statuses = ["All Statuses", "Open", "In Progress", "Resolved"];
-    statusMenu.innerHTML = "";
-
-    statuses.forEach((status) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "dropdown-item";
-      button.textContent = status;
-      button.addEventListener("click", () => {
-        if (statusLabel) statusLabel.textContent = status;
-        closeStatusMenu();
-        applyFilters();
-      });
-      statusMenu.appendChild(button);
-    });
+    if (priorityFilter) priorityFilter.value = "all";
   };
 
   const loadStaffTickets = async () => {
     const staffId = localStorage.getItem("userId");
     if (!staffId) {
       console.warn("No userId found in localStorage");
-      const article = document.createElement("article");
-      article.className = "ticket-card";
-      article.innerHTML = `
-        <div class="ticket-info">
-          <div class="ticket-row">
-            <div class="ticket-id">Not Logged In</div>
-          </div>
-          <h3 class="ticket-title">Please log in to view your tickets</h3>
-          <div class="ticket-meta">
-            <span class="meta-text">Redirecting to login...</span>
-          </div>
-        </div>
-      `;
-      ticketsSection.innerHTML = '';
-      ticketsSection.appendChild(article);
+      if (ticketsTableBody) {
+        ticketsTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:#667085;">Please log in to view your tickets</td></tr>`;
+      }
       setTimeout(() => window.location.href = '/', 2000);
       return;
     }
@@ -627,56 +482,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     notificationsPanel.classList.add("hidden");
   });
 
-  toggle?.addEventListener("click", () => {
-    if (!menu) return;
-    menu.classList.contains("hidden") ? openMenu() : closeMenu();
+  // Tabs & priority filter
+  ticketsTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      ticketsTabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      currentTab = (tab.dataset.status || "all").toLowerCase();
+      applyFilters();
+    });
   });
 
-  document.addEventListener("click", (e) => {
-    if (!menu || !toggle) return;
-    if (menu.contains(e.target) || toggle.contains(e.target)) return;
-    closeMenu();
-  });
-
-  statusToggle?.addEventListener("click", () => {
-    if (!statusMenu) return;
-    statusMenu.classList.contains("hidden") ? openStatusMenu() : closeStatusMenu();
-  });
-
-  document.addEventListener("click", (e) => {
-    if (!statusMenu || !statusToggle) return;
-    if (statusMenu.contains(e.target) || statusToggle.contains(e.target)) return;
-    closeStatusMenu();
-  });
-
-  // ========================================
-  // PAGINATION EVENT LISTENERS
-  // ========================================
-  const prevPageBtn = document.getElementById('prev-page-btn');
-  const nextPageBtn = document.getElementById('next-page-btn');
-
-  prevPageBtn?.addEventListener('click', () => {
-    if (currentPage > 1) {
-      currentPage--;
-      renderTickets(filteredTickets);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  });
-
-  nextPageBtn?.addEventListener('click', () => {
-    const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
-    if (currentPage < totalPages) {
-      currentPage++;
-      renderTickets(filteredTickets);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  });
+  priorityFilter?.addEventListener("change", applyFilters);
 
   // ========================================
   // INITIALIZE
   // ========================================
   await fetchCategories();
-  renderStatuses();
   await loadStaffTickets();
   setInterval(loadStaffTickets, 10000);
 });

@@ -1034,7 +1034,7 @@ body {
 .detail-value {
   font-size: 15px;
   color: #1f2d4a;
-  font-weight: 350;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -1048,20 +1048,23 @@ body {
 }
 
 .select-box {
+  min-width: 140px;
   height: 48px;
-  border: 1px solid #dfe5ef;
+  border: 1px solid #d8dfea;
   border-radius: 12px;
-  background: #fff;
+  padding: 0 12px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 15px 12px;
-  font-weight: 300;
-  color: var(--text);
-  min-width: 190px;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  background: #fff;
 }
+
+.select-box.compact {
+  height: 42px;
+  padding: 0 10px;
+}
+
 
 .chevron {
   width: 16px;
