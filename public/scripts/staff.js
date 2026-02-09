@@ -312,11 +312,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ========================================
   const ticketsTableBody = document.getElementById("staff-tickets-body");
   const ticketsTabs = document.querySelectorAll(".ticket-tab");
+  const tabsRow = document.querySelector(".tabs-and-priority");
   const priorityFilter = document.getElementById("priority-filter");
+  const tableWrap = document.querySelector(".table-wrap");
+  const kanbanWrap = document.getElementById("kanban-wrap");
+  const kanbanColumns = {
+    open: document.getElementById("kanban-open"),
+    "in-progress": document.getElementById("kanban-inprogress"),
+    resolved: document.getElementById("kanban-resolved"),
+  };
+  const viewToggleBtns = document.querySelectorAll(".view-toggle-btn");
 
   let ticketsCache = [];
   let filteredTickets = [];
   let currentTab = "all";
+  let currentView = "list";
 
   const normalize = (value = "") => value.toString().trim().toLowerCase();
 
@@ -339,11 +349,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const mapStatusForFilter = (status = "") => {
     const s = normalize(status);
-    if (s.includes("progress")) return "in progress";
+    if (s.includes("progress")) return "in-progress";
     if (s.includes("resolved")) return "resolved";
     if (s.includes("open") || s.includes("pending")) return "open";
-    if (!s) return "unassigned";
-    return s;
+    if (!s) return "open";
+    return s === "unassigned" ? "open" : s;
   };
 
   const priorityPillClass = (priority = "") => {
@@ -356,6 +366,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const clearTicketCards = () => {}; // not used in table mode
   const updatePagination = () => {}; // pagination hidden in table mode
+
+  const setViewVisibility = () => {
+    const isKanban = currentView === "kanban";
+    tableWrap?.classList.toggle("hidden", isKanban);
+    kanbanWrap?.classList.toggle("hidden", !isKanban);
+    tabsRow?.classList.toggle("hidden", isKanban);
+  };
 
   const renderTickets = (tickets) => {
     if (!ticketsTableBody) return;
@@ -386,8 +403,133 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   };
 
+  const createKanbanCard = (ticket) => {
+    const statusKey = mapStatusForFilter(ticket.status);
+    const card = document.createElement("div");
+    card.className = "kanban-card";
+    card.draggable = true;
+    card.dataset.id = ticket.id;
+    card.dataset.status = statusKey;
+
+    const safeTitle = ticket.title || "Untitled Ticket";
+    const safeDesc = ticket.description || ticket.category || "No description";
+    const safeCategory = ticket.category || "Uncategorized";
+    const priorityText = ticket.priority || "Not Set";
+
+    const displayId = buildTicketId(ticket.id);
+
+    card.innerHTML = `
+      <div class="kanban-card-header">
+        <div class="kanban-card-title">${safeTitle}</div>
+        <span class="kanban-card-badge">${priorityText}</span>
+      </div>
+      <div class="kanban-card-meta">${displayId} · ${formatDate(ticket.date)}</div>
+      <div class="kanban-card-desc">${safeDesc}</div>
+      <div class="kanban-card-footer">
+        <span class="kanban-card-category">${safeCategory}</span>
+        <a class="kanban-card-action" href="/staff/details.html?ticketId=${encodeURIComponent(ticket.id || "")}">View</a>
+      </div>
+    `;
+
+    card.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/plain", ticket.id);
+      card.classList.add("is-dragging");
+    });
+    card.addEventListener("dragend", () => card.classList.remove("is-dragging"));
+    return card;
+  };
+
+  const renderKanban = (tickets) => {
+    if (!kanbanWrap) return;
+    Object.values(kanbanColumns).forEach((col) => col && (col.innerHTML = ""));
+    document.querySelectorAll(".kanban-count").forEach((c) => (c.textContent = "0"));
+
+    if (!tickets || tickets.length === 0) {
+      Object.values(kanbanColumns).forEach((col) => {
+        if (col) col.innerHTML = `<div class="kanban-empty">No tickets</div>`;
+      });
+      return;
+    }
+
+    const counts = { open: 0, "in-progress": 0, resolved: 0 };
+
+    tickets.forEach((ticket) => {
+      const statusKey = mapStatusForFilter(ticket.status);
+      const target =
+        kanbanColumns[statusKey] || kanbanColumns["open"];
+      if (!target) return;
+      const card = createKanbanCard(ticket);
+      target.appendChild(card);
+      const bucket = counts.hasOwnProperty(statusKey) ? statusKey : "open";
+      counts[bucket] = (counts[bucket] || 0) + 1;
+    });
+
+    Object.entries(counts).forEach(([key, val]) => {
+      const pill = document.querySelector(`.kanban-count[data-count-for="${key}"]`);
+      if (pill) pill.textContent = val;
+    });
+  };
+
+  const updateTicketStatus = async (ticketId, newStatusKey) => {
+    const statusMap = {
+      open: "Open",
+      "in-progress": "In Progress",
+      resolved: "Resolved",
+    };
+    const payloadStatus = statusMap[newStatusKey] || "Open";
+
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: payloadStatus }),
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+      const ticket = ticketsCache.find((t) => t.id === ticketId);
+      if (ticket) ticket.status = payloadStatus;
+      applyFilters();
+    } catch (err) {
+      console.error(err);
+      showToastNotification("Update failed", "Could not move ticket. Try again.", "error");
+      applyFilters(); // refresh positions back
+    }
+  };
+
+  const setupColumnDrops = () => {
+    const columns = document.querySelectorAll(".kanban-column-body");
+    columns.forEach((col) => {
+      col.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        col.classList.add("drag-over");
+      });
+      col.addEventListener("dragleave", () => col.classList.remove("drag-over"));
+      col.addEventListener("drop", (e) => {
+        e.preventDefault();
+        col.classList.remove("drag-over");
+        const ticketId = e.dataTransfer.getData("text/plain");
+        const newStatusKey = col.dataset.status || "open";
+        const ticket = ticketsCache.find((t) => t.id === ticketId);
+        if (!ticket) return;
+        // Optimistic move
+        ticket.status =
+          newStatusKey === "in-progress"
+            ? "In Progress"
+            : newStatusKey === "resolved"
+            ? "Resolved"
+            : "Open";
+        renderKanban(filteredTickets);
+        updateTicketStatus(ticketId, newStatusKey);
+      });
+    });
+  };
+
+  const setActiveViewBtn = (view) => {
+    viewToggleBtns.forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.view === view);
+    });
+  };
+
   const applyFilters = () => {
-    currentPage = 1; // Reset to first page when filters change
     const selectedPriority = (priorityFilter?.value || "all").toLowerCase();
     const selectedStatus = currentTab;
 
@@ -413,7 +555,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     filteredTickets = filtered;
-    renderTickets(filtered);
+    if (currentView === "kanban") {
+      renderKanban(filtered);
+    } else {
+      renderTickets(filtered);
+    }
   };
 
   const fetchCategories = async () => {
@@ -494,10 +640,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   priorityFilter?.addEventListener("change", applyFilters);
 
+  viewToggleBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const view = btn.dataset.view;
+      if (!view) return;
+      currentView = view;
+      setActiveViewBtn(view);
+      setViewVisibility();
+      applyFilters();
+    });
+  });
+
   // ========================================
   // INITIALIZE
   // ========================================
   await fetchCategories();
   await loadStaffTickets();
+  setViewVisibility();
+  setupColumnDrops();
   setInterval(loadStaffTickets, 10000);
 });
