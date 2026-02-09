@@ -726,6 +726,9 @@ body {
 }
 
 .mgmt-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
   padding: 8px 14px;
   border-radius: 999px;
   background: rgba(251, 176, 25, 0.08);
@@ -736,9 +739,9 @@ body {
 
 .mgmt-tabs {
   display: inline-flex;
-  gap: 10px;
-  margin: 14px 0 6px;
-  padding-left: 4px;
+  gap: 12px;
+  margin: 0;
+  padding-left: 0;
 }
 
 .mgmt-header-actions {
@@ -790,8 +793,14 @@ body {
 .table-controls {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  margin: 6px 4px 4px;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 12px 4px 16px;
+}
+
+.table-controls .table-search {
+  margin-left: auto;
 }
 
 .table-search input {
@@ -988,14 +997,19 @@ body {
   letter-spacing: 0.3px;
 }
 
-.ticket-badge.assigned {
-  background: #e5efff;
-  color: #3f7dfd;
+.ticket-badge.low {
+  background: var(--pill-blue);
+  color: var(--pill-blue-text);
 }
 
-.ticket-badge.unassigned {
-  background: #ffe7d6;
-  color: #d87730;
+.ticket-badge.medium {
+  background: var(--pill-yellow);
+  color: var(--pill-yellow-text);
+}
+
+.ticket-badge.high {
+  background: var(--pill-red);
+  color: var(--pill-red-text);
 }
 
 .kanban-card-meta {
@@ -1044,8 +1058,8 @@ body {
 }
 
 .mgmt-tab {
-  min-width: 130px;
-  height: 44px;
+  min-width: 140px;
+  height: 48px;
   border-radius: 12px;
   border: 1px solid #e4e7ee;
   background: #f7f8fc;
@@ -1053,7 +1067,7 @@ body {
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-  padding: 0 16px;
+  padding: 0 18px;
   transition: all 0.15s ease;
 }
 
@@ -1114,7 +1128,7 @@ body {
   font-weight: 700;
   font-size: 14px;
   color: #374151;
-  padding: 14px 18px;
+  padding: 16px 20px;
   border-bottom: 1px solid #e4e7ee;
 
 }
@@ -1128,7 +1142,7 @@ body {
 }
 
 .mgmt-table td {
-  padding: 14px 18px;
+  padding: 16px 20px;
   border-bottom: 1px solid #e4e7ee;
   color: #1f2937;
   font-size: 14px;

@@ -597,7 +597,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   };
 
-  const truncateText = (text, maxLength = 150) => {
+  const truncateText = (text, maxLength = 50) => {
     if (!text) return 'No description';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
@@ -642,6 +642,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const hasAssignedCategory = (ticket) =>
     !!ticket?.category && ticket.category.toString().trim() !== '';
+
+  const normalizePriorityKey = (priority) => {
+    const value = (priority || '').toString().trim().toLowerCase();
+    if (value === 'high') return 'high';
+    if (value === 'low') return 'low';
+    return 'medium';
+  };
+
+  const getPriorityLabel = (priorityKey) => priorityKey.toUpperCase();
 
   const canMoveToStatus = (statusKey) => {
     if (statusKey === 'unassigned') return false;
@@ -1033,9 +1042,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       columns[statusKey].forEach((ticket) => {
         const card = document.createElement('article');
-        const badgeClass = hasAssignedCategory(ticket) ? 'assigned' : 'unassigned';
+        const priorityKey = normalizePriorityKey(ticket.priority);
+        const priorityLabel = getPriorityLabel(priorityKey);
         const safeTitle = escapeHtml(ticket.title || 'Untitled');
-        const safeDesc = escapeHtml(truncateText(ticket.description, 120));
+        const safeDesc = escapeHtml(truncateText(ticket.description));
         const safeCategory = escapeHtml(ticket.category || 'Unassigned');
         const dateLabel = formatDate(ticket.date);
 
@@ -1044,14 +1054,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         card.dataset.status = normalizeStatusKey(ticket.status);
         card.setAttribute('tabindex', '0');
         card.setAttribute('role', 'button');
-        card.setAttribute('aria-label', `Ticket ${ticket.id || ''}`);
+        card.setAttribute('aria-label', `Ticket: ${safeTitle}`);
 
         card.innerHTML = `
           <div class="kanban-card-header">
             <div class="kanban-card-title">${safeTitle}</div>
-            <span class="ticket-badge ${badgeClass}">${badgeClass}</span>
+            <span class="ticket-badge ${priorityKey}">${priorityLabel}</span>
           </div>
-          <div class="kanban-card-meta">#${escapeHtml(ticket.id || '')} · ${dateLabel}</div>
+          <div class="kanban-card-meta">${dateLabel}</div>
           <div class="kanban-card-desc">${safeDesc}</div>
           <div class="kanban-card-footer">
             <span class="kanban-card-category">${safeCategory}</span>
@@ -1210,7 +1220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ? unassigned.map((t) => `
             <tr data-ticket-id="${escapeHtml(t.id || '')}">
               <td>${escapeHtml(t.title || 'Untitled')}</td>
-              <td>${escapeHtml(truncateText(t.description, 100))}</td>
+              <td>${escapeHtml(truncateText(t.description))}</td>
               <td>${formatDate(t.date)}</td>
               <td><button class="action-btn primary-btn assign-category-btn">Assign Category</button></td>
             </tr>
@@ -1231,7 +1241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? list.map((t) => `
           <tr data-ticket-id="${escapeHtml(t.id || '')}">
             <td>${escapeHtml(t.title || 'Untitled')}</td>
-            <td>${escapeHtml(truncateText(t.description, 100))}</td>
+            <td>${escapeHtml(truncateText(t.description))}</td>
             <td>${formatDate(t.date)}</td>
             <td>${escapeHtml(t.category || 'Unassigned')}</td>
             <td><span class="status-badge ${getStatusClass(t.status)}">${escapeHtml(t.status || '')}</span></td>

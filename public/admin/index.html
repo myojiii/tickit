@@ -127,8 +127,8 @@
               <div class="mgmt-title">Tickets</div>
               <div class="mgmt-subtitle">View every ticket by queue position or status</div>
             </div>
-            <div class="mgmt-pill"></div>
             <div class="mgmt-header-actions">
+              <div class="mgmt-pill" aria-live="polite"></div>
               <div class="view-toggle" role="tablist" aria-label="Ticket view">
                 <button class="view-toggle-btn active" type="button" data-view-toggle="kanban" role="tab" aria-selected="true">Card View</button>
                 <button class="view-toggle-btn" type="button" data-view-toggle="table" role="tab" aria-selected="false">Table View</button>
@@ -197,16 +197,15 @@
 
           <div class="tickets-view hidden" data-view="table">
             <div class="table-controls">
+              <div class="mgmt-tabs tickets-tabs">
+                <button class="mgmt-tab active" data-tab="unassigned">Unassigned</button>
+                <button class="mgmt-tab" data-tab="open">Open</button>
+                <button class="mgmt-tab" data-tab="in-progress">In Progress</button>
+                <button class="mgmt-tab" data-tab="resolved">Resolved</button>
+              </div>
               <div class="table-search">
                 <input type="text" id="tickets-filter" placeholder="Filter tickets..." aria-label="Filter tickets">
               </div>
-            </div>
-
-            <div class="mgmt-tabs tickets-tabs">
-              <button class="mgmt-tab active" data-tab="unassigned">Unassigned</button>
-              <button class="mgmt-tab" data-tab="open">Open</button>
-              <button class="mgmt-tab" data-tab="in-progress">In Progress</button>
-              <button class="mgmt-tab" data-tab="resolved">Resolved</button>
             </div>
 
             <div class="mgmt-table-wrap">
