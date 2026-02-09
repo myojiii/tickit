@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ========================================
   const ticketTabs = document.querySelectorAll('.tickets-tabs .mgmt-tab');
   const ticketTables = document.querySelectorAll('.mgmt-table[data-status]');
+  const viewToggleButtons = document.querySelectorAll('[data-view-toggle]');
+  const ticketsViewPanels = document.querySelectorAll('.tickets-view');
+  const ticketsFilterInput = document.getElementById('tickets-filter');
 
   const activateTicketTab = (target) => {
     if (!target) return;
@@ -65,6 +68,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Ensure default tab shown on load
   const initialTab = document.querySelector('.tickets-tabs .mgmt-tab.active')?.dataset.tab || 'open';
   activateTicketTab(initialTab);
+
+  viewToggleButtons.forEach((btn) => {
+    btn.addEventListener('click', () => setViewMode(btn.dataset.viewToggle));
+  });
+
+  ticketsFilterInput?.addEventListener('input', (e) => {
+    applyTableFilter(e.target.value);
+  });
 
   // ========================================
   // LOGOUT FUNCTIONALITY
@@ -171,9 +182,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ========================================
   // GLOBAL STATE
   // ========================================
-  let assignModalState = { ticketId: null };
+  let assignModalState = { ticketId: null, pendingStatus: null };
   let editModalState = { ticketId: null };
   let deleteModalState = { ticketId: null };
+  let ticketsCache = [];
+  let kanbanDnDReady = false;
+  let activeViewMode = localStorage.getItem('adminTicketsView') || 'kanban';
+  if (!['kanban', 'table'].includes(activeViewMode)) {
+    activeViewMode = 'kanban';
+  }
+
+  const userRole = (localStorage.getItem('userRole') || '').toLowerCase();
+  const adminCanCommunicate = userRole === 'admin'
+    ? localStorage.getItem('adminCanCommunicate') !== 'false'
+    : false;
 
   // ========================================
   // ADMIN NOTIFICATION SYSTEM
@@ -506,13 +528,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const deleteOverlay = document.getElementById('delete-modal');
   const viewOverlay = document.getElementById('view-modal');
   const messagesList = document.getElementById('messages-list');
+  const kanbanLoading = document.getElementById('kanban-loading');
   let lastMessagesSnapshot = null;
 
   // ========================================
   // MODAL HELPERS
   // ========================================
   const openAssignModal = () => assignOverlay?.classList.remove('hidden');
-  const closeAssignModal = () => assignOverlay?.classList.add('hidden');
+  const closeAssignModal = () => {
+    assignOverlay?.classList.add('hidden');
+    assignModalState.pendingStatus = null;
+  };
 
   const openEditModal = () => editOverlay?.classList.remove('hidden');
   const closeEditModal = () => editOverlay?.classList.add('hidden');
@@ -528,6 +554,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     viewTicketUserId = null;
     viewTicketStaffId = null;
     lastMessagesSnapshot = null;
+  };
+
+  // ========================================
+  // VIEW TOGGLE
+  // ========================================
+  const setKanbanLoading = (isLoading) => {
+    if (!kanbanLoading) return;
+    kanbanLoading.classList.toggle('hidden', !isLoading);
+  };
+
+  const setViewMode = (mode) => {
+    activeViewMode = mode;
+    localStorage.setItem('adminTicketsView', mode);
+    ticketsViewPanels.forEach((panel) => {
+      const shouldShow = panel.dataset.view === mode;
+      panel.classList.toggle('hidden', !shouldShow);
+    });
+    viewToggleButtons.forEach((btn) => {
+      const isActive = btn.dataset.viewToggle === mode;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
   };
 
   let viewMessagesTimer = null;
@@ -575,6 +623,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const getStatusClass = (status) =>
     status ? status.toLowerCase().replace(/\s+/g, '-') : '';
+
+  const normalizeStatusKey = (status) => {
+    const value = (status || '').toString().trim().toLowerCase();
+    if (value === 'in progress' || value === 'in-progress') return 'in-progress';
+    if (value === 'resolved') return 'resolved';
+    if (value === 'open') return 'open';
+    if (!value || value === 'pending') return 'open';
+    return 'open';
+  };
+
+  const getStatusLabel = (statusKey) => {
+    if (statusKey === 'in-progress') return 'In Progress';
+    if (statusKey === 'resolved') return 'Resolved';
+    if (statusKey === 'open') return 'Open';
+    return 'Open';
+  };
+
+  const hasAssignedCategory = (ticket) =>
+    !!ticket?.category && ticket.category.toString().trim() !== '';
+
+  const canMoveToStatus = (statusKey) => {
+    if (statusKey === 'unassigned') return false;
+    if (userRole === 'staff') return ['open', 'in-progress', 'resolved'].includes(statusKey);
+    if (userRole === 'admin') {
+      return adminCanCommunicate
+        ? ['open', 'in-progress', 'resolved'].includes(statusKey)
+        : statusKey === 'open';
+    }
+    return false;
+  };
 
   function renderMessages(messages) {
     lastMessagesSnapshot = JSON.stringify(messages || []);
@@ -655,6 +733,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     messagesList.scrollTop = messagesList.scrollHeight;
   }
 
+  // ========================================
+  // TABLE FILTER & SORT
+  // ========================================
+  const applyTableFilter = (query) => {
+    const value = (query || '').toLowerCase().trim();
+    document.querySelectorAll('.mgmt-table tbody tr').forEach((row) => {
+      const isPlaceholder = row.querySelector('td[colspan]');
+      if (isPlaceholder) return;
+      const text = row.textContent.toLowerCase();
+      row.style.display = text.includes(value) ? '' : 'none';
+    });
+  };
+
+  const sortTable = (table, columnIndex, direction) => {
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    const rows = Array.from(tbody.querySelectorAll('tr'))
+      .filter((row) => !row.querySelector('td[colspan]'));
+
+    const multiplier = direction === 'desc' ? -1 : 1;
+    rows.sort((a, b) => {
+      const aText = (a.children[columnIndex]?.textContent || '').trim().toLowerCase();
+      const bText = (b.children[columnIndex]?.textContent || '').trim().toLowerCase();
+      if (aText < bText) return -1 * multiplier;
+      if (aText > bText) return 1 * multiplier;
+      return 0;
+    });
+
+    rows.forEach((row) => tbody.appendChild(row));
+  };
+
+  const attachTableSorting = () => {
+    document.querySelectorAll('.mgmt-table').forEach((table) => {
+      table.querySelectorAll('th[data-sortable="true"]').forEach((th, index) => {
+        th.style.cursor = 'pointer';
+        th.onclick = () => {
+          const currentDir = th.dataset.sortDir === 'asc' ? 'desc' : 'asc';
+          table.querySelectorAll('th[data-sortable="true"]').forEach((header) => {
+            header.dataset.sortDir = '';
+          });
+          th.dataset.sortDir = currentDir;
+          sortTable(table, index, currentDir);
+        };
+      });
+    });
+  };
+
   async function fetchMessages() {
     if (!viewTicketId) return;
     try {
@@ -708,28 +833,52 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ========================================
   // ASSIGN BUTTONS
   // ========================================
+  const openAssignModalWithTicket = async (ticketId, ticketData = null, pendingStatus = null) => {
+    if (!assignOverlay || !ticketId) return;
+
+    assignModalState.ticketId = ticketId;
+    assignModalState.pendingStatus = pendingStatus;
+
+    let ticket = ticketData;
+    if (!ticket || !ticket.user) {
+      try {
+        const res = await fetch(`/api/tickets/${ticketId}`);
+        if (res.ok) ticket = await res.json();
+      } catch (err) {
+        console.error('Error fetching ticket for assign modal:', err);
+      }
+    }
+
+    const modalTicketId = assignOverlay.querySelector('.modal-ticket-id');
+    const modalTicketTitle = assignOverlay.querySelector('.modal-ticket-title');
+    const modalTicketClient = assignOverlay.querySelector('.modal-ticket-client');
+    const modalDesc = assignOverlay.querySelector('.modal-desc');
+    const modalDate = assignOverlay.querySelector('.modal-date');
+
+    if (modalTicketId) modalTicketId.textContent = ticketId;
+    if (modalTicketTitle) modalTicketTitle.textContent = ticket?.title || 'Untitled';
+    if (modalTicketClient) {
+      const clientName = ticket?.user?.name || ticket?.userId || 'Unknown';
+      modalTicketClient.textContent = clientName;
+    }
+    if (modalDesc) modalDesc.textContent = ticket?.description || 'No description';
+    if (modalDate) modalDate.textContent = formatDate(ticket?.date);
+
+    const categorySelect = document.getElementById('assign-category-select');
+    if (categorySelect) categorySelect.value = '';
+
+    openAssignModal();
+  };
+
   const attachAssignButtonListeners = () => {
     document.querySelectorAll('.assign-category-btn').forEach(btn => {
       btn.onclick = (e) => {
         const tr = e.target.closest('tr');
         if (!tr || !assignOverlay) return;
 
-        const tds = tr.querySelectorAll('td');
-        assignModalState.ticketId = tr.dataset.ticketId;
-
-        const modalTicketId = assignOverlay.querySelector('.modal-ticket-id');
-        const modalTicketTitle = assignOverlay.querySelector('.modal-ticket-title');
-        const modalDesc = assignOverlay.querySelector('.modal-desc');
-        const modalDate = assignOverlay.querySelector('.modal-date');
-
-        if (modalTicketId) modalTicketId.textContent = assignModalState.ticketId;
-        if (modalTicketTitle) modalTicketTitle.textContent = tds[0]?.textContent || '';
-        if (modalDesc) modalDesc.textContent = tds[1]?.textContent || '';
-        if (modalDate) modalDate.textContent = tds[2]?.textContent || '';
-
-        const categorySelect = document.getElementById('assign-category-select');
-        if (categorySelect) categorySelect.value = '';
-        openAssignModal();
+        const ticketId = tr.dataset.ticketId;
+        const ticket = ticketsCache.find((t) => t.id === ticketId);
+        openAssignModalWithTicket(ticketId, ticket, null);
       };
     });
   };
@@ -762,54 +911,58 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ========================================
   // VIEW BUTTONS
   // ========================================
+  const openTicketModalById = async (ticketId) => {
+    if (!ticketId) return;
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}`);
+      if (!res.ok) throw new Error('Failed to fetch');
+
+      const ticket = await res.json();
+
+      viewTicketId = ticket.id || null;
+      viewTicketUserId = ticket.userId || null;
+      viewTicketStaffId = ticket.assignedStaffId || null;
+      renderMessages([]);
+
+      const viewTicketIdEl = document.getElementById('view-ticket-id');
+      const viewTicketTitleEl = document.getElementById('view-ticket-title');
+      const viewTicketDescEl = document.getElementById('view-ticket-description');
+      const viewTicketCategoryEl = document.getElementById('view-ticket-category');
+      const viewTicketDateEl = document.getElementById('view-ticket-date');
+      const viewClientUserIdEl = document.getElementById('view-client-userid');
+
+      if (viewTicketIdEl) viewTicketIdEl.textContent = ticket.id || '-';
+      if (viewTicketTitleEl) viewTicketTitleEl.textContent = ticket.title || '-';
+      if (viewTicketDescEl) viewTicketDescEl.textContent = ticket.description || '-';
+      if (viewTicketCategoryEl) viewTicketCategoryEl.textContent = ticket.category || 'Unassigned';
+      if (viewTicketDateEl) viewTicketDateEl.textContent = formatDate(ticket.date);
+      if (viewClientUserIdEl) viewClientUserIdEl.textContent = ticket.userId || '-';
+
+      const statusEl = document.getElementById('view-ticket-status');
+      if (statusEl) {
+        statusEl.textContent = ticket.status || '';
+        statusEl.className = `status-badge ${getStatusClass(ticket.status)}`;
+      }
+
+      const priorityEl = document.getElementById('view-ticket-priority');
+      if (priorityEl) {
+        priorityEl.textContent = ticket.priority || 'Not Set';
+      }
+
+      openViewModal();
+      startMessagesPolling();
+    } catch (err) {
+      console.error('Error fetching ticket:', err);
+      showNotification('Error', 'Failed to load ticket details', 'error');
+    }
+  };
+
   const attachViewButtonListeners = () => {
     document.querySelectorAll('.view-btn').forEach(btn => {
       btn.onclick = async (e) => {
         const tr = e.target.closest('tr');
         if (!tr) return;
-
-        try {
-          const res = await fetch(`/api/tickets/${tr.dataset.ticketId}`);
-          if (!res.ok) throw new Error('Failed to fetch');
-          
-          const ticket = await res.json();
-
-          viewTicketId = ticket.id || null;
-          viewTicketUserId = ticket.userId || null;
-          viewTicketStaffId = ticket.assignedStaffId || null;
-          renderMessages([]);
-
-          const viewTicketIdEl = document.getElementById('view-ticket-id');
-          const viewTicketTitleEl = document.getElementById('view-ticket-title');
-          const viewTicketDescEl = document.getElementById('view-ticket-description');
-          const viewTicketCategoryEl = document.getElementById('view-ticket-category');
-          const viewTicketDateEl = document.getElementById('view-ticket-date');
-          const viewClientUserIdEl = document.getElementById('view-client-userid');
-
-          if (viewTicketIdEl) viewTicketIdEl.textContent = ticket.id || '-';
-          if (viewTicketTitleEl) viewTicketTitleEl.textContent = ticket.title || '-';
-          if (viewTicketDescEl) viewTicketDescEl.textContent = ticket.description || '-';
-          if (viewTicketCategoryEl) viewTicketCategoryEl.textContent = ticket.category || 'Unassigned';
-          if (viewTicketDateEl) viewTicketDateEl.textContent = formatDate(ticket.date);
-          if (viewClientUserIdEl) viewClientUserIdEl.textContent = ticket.userId || '-';
-
-          const statusEl = document.getElementById('view-ticket-status');
-          if (statusEl) {
-            statusEl.textContent = ticket.status || '';
-            statusEl.className = `status-badge ${getStatusClass(ticket.status)}`;
-          }
-
-          const priorityEl = document.getElementById('view-ticket-priority');
-          if (priorityEl) {
-            priorityEl.textContent = ticket.priority || 'Not Set';
-          }
-
-          openViewModal();
-          startMessagesPolling();
-        } catch (err) {
-          console.error('Error fetching ticket:', err);
-          showNotification('Error', 'Failed to load ticket details', 'error');
-        }
+        await openTicketModalById(tr.dataset.ticketId);
       };
     });
   };
@@ -832,9 +985,216 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   // ========================================
+  // KANBAN RENDERING & DRAG/DROP
+  // ========================================
+  const renderKanban = (tickets) => {
+    const board = document.getElementById('kanban-board');
+    if (!board) return;
+
+    const columns = {
+      unassigned: [],
+      open: [],
+      'in-progress': [],
+      resolved: [],
+    };
+
+    tickets.forEach((ticket) => {
+      if (!hasAssignedCategory(ticket)) {
+        columns.unassigned.push(ticket);
+        return;
+      }
+
+      const statusKey = normalizeStatusKey(ticket.status);
+      if (columns[statusKey]) {
+        columns[statusKey].push(ticket);
+      } else {
+        columns.open.push(ticket);
+      }
+    });
+
+    Object.keys(columns).forEach((statusKey) => {
+      const columnBody = board.querySelector(`.kanban-column-body[data-status="${statusKey}"]`);
+      const countEl = board.querySelector(`[data-count-for="${statusKey}"]`);
+      if (!columnBody) return;
+
+      columnBody.innerHTML = '';
+      if (countEl) countEl.textContent = columns[statusKey].length.toString();
+
+      if (!columns[statusKey].length) {
+        const empty = document.createElement('div');
+        empty.className = 'kanban-empty';
+        empty.style.textAlign = 'center';
+        empty.style.color = '#7b8296';
+        empty.style.fontSize = '13px';
+        empty.textContent = 'No tickets';
+        columnBody.appendChild(empty);
+        return;
+      }
+
+      columns[statusKey].forEach((ticket) => {
+        const card = document.createElement('article');
+        const badgeClass = hasAssignedCategory(ticket) ? 'assigned' : 'unassigned';
+        const safeTitle = escapeHtml(ticket.title || 'Untitled');
+        const safeDesc = escapeHtml(truncateText(ticket.description, 120));
+        const safeCategory = escapeHtml(ticket.category || 'Unassigned');
+        const dateLabel = formatDate(ticket.date);
+
+        card.className = 'kanban-card';
+        card.dataset.ticketId = ticket.id || '';
+        card.dataset.status = normalizeStatusKey(ticket.status);
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', `Ticket ${ticket.id || ''}`);
+
+        card.innerHTML = `
+          <div class="kanban-card-header">
+            <div class="kanban-card-title">${safeTitle}</div>
+            <span class="ticket-badge ${badgeClass}">${badgeClass}</span>
+          </div>
+          <div class="kanban-card-meta">#${escapeHtml(ticket.id || '')} · ${dateLabel}</div>
+          <div class="kanban-card-desc">${safeDesc}</div>
+          <div class="kanban-card-footer">
+            <span class="kanban-card-category">${safeCategory}</span>
+            <button class="kanban-card-action" type="button">View</button>
+          </div>
+        `;
+
+        const viewButton = card.querySelector('.kanban-card-action');
+        viewButton?.addEventListener('click', (event) => {
+          event.stopPropagation();
+          openTicketModalById(ticket.id);
+        });
+
+        card.addEventListener('click', () => openTicketModalById(ticket.id));
+        card.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openTicketModalById(ticket.id);
+          }
+        });
+
+        columnBody.appendChild(card);
+      });
+    });
+
+    applyRoleRestrictions();
+    setupKanbanDnD();
+  };
+
+  const applyRoleRestrictions = () => {
+    document.querySelectorAll('.kanban-column').forEach((column) => {
+      const statusKey = column.dataset.status;
+      const shouldDisable = statusKey !== 'unassigned' && !canMoveToStatus(statusKey);
+      column.classList.toggle('is-disabled', shouldDisable);
+      if (shouldDisable) {
+        column.dataset.tooltip = 'You do not have permission to move tickets here.';
+      } else {
+        column.removeAttribute('data-tooltip');
+      }
+
+      const columnBody = column.querySelector('.kanban-column-body');
+      if (columnBody) {
+        columnBody.dataset.dropDisabled = shouldDisable || statusKey === 'unassigned' ? 'true' : 'false';
+      }
+    });
+  };
+
+  const setupKanbanDnD = () => {
+    if (kanbanDnDReady || !window.interact) return;
+    kanbanDnDReady = true;
+
+    interact('.kanban-card').draggable({
+      inertia: true,
+      autoScroll: true,
+      listeners: {
+        start(event) {
+          const card = event.target;
+          card.classList.add('is-dragging');
+          card.setAttribute('aria-grabbed', 'true');
+          card.dataset.originStatus = card.closest('.kanban-column')?.dataset.status || '';
+        },
+        move(event) {
+          const target = event.target;
+          const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+          const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+          target.style.transform = `translate(${x}px, ${y}px)`;
+          target.setAttribute('data-x', x);
+          target.setAttribute('data-y', y);
+        },
+        end(event) {
+          const card = event.target;
+          card.classList.remove('is-dragging');
+          card.setAttribute('aria-grabbed', 'false');
+          card.style.transform = '';
+          card.removeAttribute('data-x');
+          card.removeAttribute('data-y');
+        },
+      },
+    });
+
+    interact('.kanban-column-body').dropzone({
+      accept: '.kanban-card',
+      overlap: 0.2,
+      ondropactivate(event) {
+        event.target.classList.add('drop-active');
+      },
+      ondragenter(event) {
+        event.target.classList.add('drop-target');
+      },
+      ondragleave(event) {
+        event.target.classList.remove('drop-target');
+      },
+      ondropdeactivate(event) {
+        event.target.classList.remove('drop-active');
+        event.target.classList.remove('drop-target');
+      },
+      ondrop(event) {
+        handleKanbanDrop(event);
+      },
+    });
+  };
+
+  const handleKanbanDrop = async (event) => {
+    const dropzone = event.target;
+    const card = event.relatedTarget;
+    if (!dropzone || !card) return;
+
+    const targetStatus = dropzone.dataset.status;
+    const ticketId = card.dataset.ticketId;
+    const originStatus = card.dataset.originStatus;
+
+    if (!ticketId || !targetStatus || targetStatus === originStatus) return;
+    if (dropzone.dataset.dropDisabled === 'true') {
+      showNotification('Permission denied', 'You cannot move tickets to this column.', 'error');
+      renderKanban(ticketsCache);
+      return;
+    }
+
+    const ticket = ticketsCache.find((t) => t.id === ticketId);
+    if (!ticket) return;
+
+    if (!canMoveToStatus(targetStatus)) {
+      showNotification('Restricted', 'You do not have permission to move this ticket.', 'error');
+      renderKanban(ticketsCache);
+      return;
+    }
+
+    if (!hasAssignedCategory(ticket)) {
+      assignModalState.ticketId = ticketId;
+      assignModalState.pendingStatus = targetStatus;
+      await openAssignModalWithTicket(ticketId, ticket);
+      renderKanban(ticketsCache);
+      return;
+    }
+
+    await updateTicketStatus(ticketId, targetStatus);
+  };
+
+  // ========================================
   // LOAD TICKETS
   // ========================================
-  const loadTickets = async () => {
+  const renderTableView = (tickets) => {
     const unassignedTbody = document.querySelector('.mgmt-table[data-status="unassigned"] tbody');
     const statusTbodies = {
       open: document.querySelector('.mgmt-table[data-status="open"] tbody'),
@@ -842,7 +1202,64 @@ document.addEventListener('DOMContentLoaded', async () => {
       resolved: document.querySelector('.mgmt-table[data-status="resolved"] tbody'),
     };
 
+    const unassigned = tickets.filter((t) => !hasAssignedCategory(t));
+    const assigned = tickets.filter((t) => hasAssignedCategory(t));
+
+    if (unassignedTbody) {
+      unassignedTbody.innerHTML = unassigned.length
+        ? unassigned.map((t) => `
+            <tr data-ticket-id="${escapeHtml(t.id || '')}">
+              <td>${escapeHtml(t.title || 'Untitled')}</td>
+              <td>${escapeHtml(truncateText(t.description, 100))}</td>
+              <td>${formatDate(t.date)}</td>
+              <td><button class="action-btn primary-btn assign-category-btn">Assign Category</button></td>
+            </tr>
+          `).join('')
+        : '<tr><td colspan="4" style="text-align:center;padding:40px;color:#666;">No unassigned tickets</td></tr>';
+      attachAssignButtonListeners();
+    }
+
+    const buckets = { open: [], inProgress: [], resolved: [] };
+    assigned.forEach((t) => {
+      const status = normalizeStatusKey(t.status);
+      if (status === 'in-progress') buckets.inProgress.push(t);
+      else if (status === 'resolved') buckets.resolved.push(t);
+      else buckets.open.push(t);
+    });
+
+    const renderAssignedRows = (list) => list.length
+      ? list.map((t) => `
+          <tr data-ticket-id="${escapeHtml(t.id || '')}">
+            <td>${escapeHtml(t.title || 'Untitled')}</td>
+            <td>${escapeHtml(truncateText(t.description, 100))}</td>
+            <td>${formatDate(t.date)}</td>
+            <td>${escapeHtml(t.category || 'Unassigned')}</td>
+            <td><span class="status-badge ${getStatusClass(t.status)}">${escapeHtml(t.status || '')}</span></td>
+            <td>
+              <div class="action-icons">
+                <button class="icon-action-btn view-btn" title="View">👁</button>
+                <button class="icon-action-btn edit-btn" title="Edit">✏️</button>
+                <button class="icon-action-btn delete-btn" title="Delete">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        `).join('')
+      : '<tr><td colspan="6" style="text-align:center;padding:40px;color:#666;">No tickets in this status</td></tr>';
+
+    if (statusTbodies.open) statusTbodies.open.innerHTML = renderAssignedRows(buckets.open);
+    if (statusTbodies.inProgress) statusTbodies.inProgress.innerHTML = renderAssignedRows(buckets.inProgress);
+    if (statusTbodies.resolved) statusTbodies.resolved.innerHTML = renderAssignedRows(buckets.resolved);
+
+    attachViewButtonListeners();
+    attachEditButtonListeners();
+    attachDeleteButtonListeners();
+    attachTableSorting();
+    if (ticketsFilterInput) applyTableFilter(ticketsFilterInput.value);
+  };
+
+  const loadTickets = async () => {
     console.log('🎫 Starting to load tickets...');
+    setKanbanLoading(true);
 
     try {
       const res = await fetch('/api/tickets');
@@ -852,75 +1269,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('❌ Response not OK. Status:', res.status, 'Error:', errorText);
         throw new Error(`Failed to fetch tickets: ${res.status}`);
       }
-      
-      const tickets = await res.json();
-      console.log('✅ Fetched tickets:', tickets);
 
-      const unassigned = tickets.filter(t => !t.category || t.category.trim() === '');
-      const assigned = tickets.filter(t => t.category && t.category.trim() !== '');
+      ticketsCache = await res.json();
+      console.log('✅ Fetched tickets:', ticketsCache);
 
-      // Unassigned block
-      if (unassignedTbody) {
-        unassignedTbody.innerHTML = unassigned.length
-          ? unassigned.map(t => `
-              <tr data-ticket-id="${escapeHtml(t.id || '')}">
-                <td>${escapeHtml(t.title || 'Untitled')}</td>
-                <td>${escapeHtml(truncateText(t.description, 100))}</td>
-                <td>${formatDate(t.date)}</td>
-                <td><button class="action-btn primary-btn assign-category-btn">Assign Category</button></td>
-              </tr>
-            `).join('')
-          : '<tr><td colspan="4" style="text-align:center;padding:40px;color:#666;">No unassigned tickets</td></tr>';
-        attachAssignButtonListeners();
-      }
+      const pill = document.querySelector('.mgmt-pill');
+      if (pill) pill.textContent = `${ticketsCache.length} total`;
 
-      // Bucket assigned tickets by status
-      const buckets = { open: [], inProgress: [], resolved: [] };
-      assigned.forEach(t => {
-        const status = (t.status || '').trim().toLowerCase();
-        if (status === 'in progress') buckets.inProgress.push(t);
-        else if (status === 'resolved') buckets.resolved.push(t);
-        else buckets.open.push(t); // default for assigned tickets
-      });
-
-      const renderAssignedRows = (list) => list.length
-        ? list.map(t => `
-            <tr data-ticket-id="${escapeHtml(t.id || '')}">
-              <td>${escapeHtml(t.title || 'Untitled')}</td>
-              <td>${escapeHtml(truncateText(t.description, 100))}</td>
-              <td>${formatDate(t.date)}</td>
-              <td>${escapeHtml(t.category || 'Unassigned')}</td>
-              <td><span class="status-badge ${getStatusClass(t.status)}">${escapeHtml(t.status || '')}</span></td>
-              <td>
-                <div class="action-icons">
-                  <button class="icon-action-btn view-btn" title="View">👁</button>
-                  <button class="icon-action-btn edit-btn" title="Edit">✏️</button>
-                  <button class="icon-action-btn delete-btn" title="Delete">🗑️</button>
-                </div>
-              </td>
-            </tr>
-          `).join('')
-        : '<tr><td colspan="6" style="text-align:center;padding:40px;color:#666;">No tickets in this status</td></tr>';
-
-      if (statusTbodies.open) statusTbodies.open.innerHTML = renderAssignedRows(buckets.open);
-      if (statusTbodies.inProgress) statusTbodies.inProgress.innerHTML = renderAssignedRows(buckets.inProgress);
-      if (statusTbodies.resolved) statusTbodies.resolved.innerHTML = renderAssignedRows(buckets.resolved);
-
-      attachViewButtonListeners();
-      attachEditButtonListeners();
-      attachDeleteButtonListeners();
+      renderTableView(ticketsCache);
+      renderKanban(ticketsCache);
 
       console.log('🎉 Tickets loaded successfully');
-
     } catch (err) {
       console.error('💥 Failed to load tickets:', err);
-      if (unassignedTbody) {
-        unassignedTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:#d32f2f;">Error loading tickets: ${err.message}</td></tr>`;
-      }
-      Object.values(statusTbodies).forEach(tbody => {
-        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error loading tickets: ${err.message}</td></tr>`;
+      const errorMessage = `Error loading tickets: ${err.message}`;
+
+      document.querySelectorAll('.mgmt-table tbody').forEach((tbody) => {
+        const colSpan = tbody.closest('.mgmt-table')?.dataset.status === 'unassigned' ? 4 : 6;
+        tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center;padding:40px;color:#d32f2f;">${errorMessage}</td></tr>`;
       });
+
       showNotification('Error', 'Failed to load tickets. Check console for details.', 'error');
+    } finally {
+      setKanbanLoading(false);
     }
   };
 
@@ -989,29 +1360,90 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('view-modal-close-btn')?.addEventListener('click', closeViewModal);
 
   // ========================================
+  // TICKET UPDATE HELPERS
+  // ========================================
+  const updateTicketCategory = async (ticketId, category) => {
+    const res = await fetch(`/api/tickets/${ticketId}/category`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category })
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to assign category');
+    }
+
+    return res.json().catch(() => ({}));
+  };
+
+  const updateTicketStatus = async (ticketId, statusKey, options = {}) => {
+    const { skipReload = false, silent = false } = options;
+    const statusLabel = getStatusLabel(statusKey);
+
+    setKanbanLoading(true);
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: statusLabel })
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      if (!silent) {
+        showNotification('Success', `Ticket moved to ${statusLabel}`, 'success');
+      }
+
+      if (!skipReload) {
+        await loadTickets();
+      }
+    } catch (err) {
+      console.error('Error updating ticket status:', err);
+      showNotification('Error', err.message || 'Failed to update status', 'error');
+    } finally {
+      setKanbanLoading(false);
+    }
+  };
+
+  // ========================================
   // ASSIGN CATEGORY ACTION
   // ========================================
   document.getElementById('assign-modal-assign')?.addEventListener('click', async () => {
     const category = document.getElementById('assign-category-select')?.value;
-    if (!category || !assignModalState.ticketId) return;
+    if (!category || !assignModalState.ticketId) {
+      showNotification('Missing category', 'Please select a category before continuing.', 'warning');
+      return;
+    }
+
+    const assignButton = document.getElementById('assign-modal-assign');
+    if (assignButton) {
+      assignButton.disabled = true;
+      assignButton.textContent = 'Assigning...';
+    }
 
     try {
-      const res = await fetch(`/api/tickets/${assignModalState.ticketId}/category`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category })
-      });
+      await updateTicketCategory(assignModalState.ticketId, category);
 
-      if (res.ok) {
-        showNotification('Success', 'Category assigned successfully!', 'success', 3000);
-        closeAssignModal();
-        await loadTickets();
-      } else {
-        showNotification('Error', 'Failed to assign category', 'error', 3000);
+      if (assignModalState.pendingStatus && assignModalState.pendingStatus !== 'open') {
+        await updateTicketStatus(assignModalState.ticketId, assignModalState.pendingStatus, {
+          skipReload: true,
+          silent: true
+        });
       }
+
+      showNotification('Success', 'Category assigned successfully!', 'success', 3000);
+      closeAssignModal();
+      await loadTickets();
     } catch (err) {
       console.error('Error assigning category:', err);
-      showNotification('Error', 'Failed to assign category', 'error', 3000);
+      showNotification('Error', err.message || 'Failed to assign category', 'error', 3000);
+    } finally {
+      if (assignButton) {
+        assignButton.disabled = false;
+        assignButton.textContent = 'Assign & Continue';
+      }
     }
   });
 
@@ -1170,6 +1602,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // INITIALIZE
   // ========================================
   console.log('🚀 Initializing admin dashboard...');
+  setViewMode(activeViewMode);
   await populateCategories();
   await loadTickets();
 

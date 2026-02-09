@@ -2,10 +2,30 @@ import TicketModel from "../models/Ticket.js";
 import MessageModel from "../models/Message.js";
 import UserModel from "../models/User.js";
 import NotificationModel from "../models/Notifications.js";
+import TicketAuditModel from "../models/TicketAudit.js";
 import {
   normalizeTicket,
   assignTicketToDepartmentStaff,
 } from "../lib/ticketHelpers.js";
+
+const createStatusAudit = async ({ req, ticketId, fromStatus, toStatus, note }) => {
+  if (!ticketId || fromStatus === toStatus) return;
+  try {
+    const changedById = req.get("X-User-Id") || req.headers["x-user-id"] || "";
+    const changedByRole = req.get("X-User-Role") || req.headers["x-user-role"] || "";
+
+    await TicketAuditModel.create({
+      ticketId,
+      changedById,
+      changedByRole,
+      fromStatus,
+      toStatus,
+      note,
+    });
+  } catch (err) {
+    console.error("Error creating ticket audit entry:", err);
+  }
+};
 
 const getTickets = async (req, res) => {
   try {
@@ -178,7 +198,17 @@ const updateCategory = async (req, res) => {
       return res.status(404).json({ message: "Ticket not found" });
     }
 
+    const previousStatus = ticket.status || "";
+
     const assignment = await assignTicketToDepartmentStaff(ticket, category);
+
+    await createStatusAudit({
+      req,
+      ticketId: ticket._id?.toString(),
+      fromStatus: previousStatus,
+      toStatus: ticket.status || "",
+      note: "Status updated via category assignment",
+    });
     
     // Create notification if ticket was assigned
     if (assignment?.assigned && assignment?.staff) {
@@ -233,6 +263,8 @@ const updateTicket = async (req, res) => {
       return res.status(404).json({ message: "Ticket not found" });
     }
 
+    const previousStatus = ticket.status || "";
+
     if (status !== undefined) ticket.status = status;
     if (priority !== undefined) ticket.priority = priority;
 
@@ -268,6 +300,14 @@ const updateTicket = async (req, res) => {
     } else {
       await ticket.save();
     }
+
+    await createStatusAudit({
+      req,
+      ticketId: ticket._id?.toString(),
+      fromStatus: previousStatus,
+      toStatus: ticket.status || "",
+      note: status !== undefined ? "Status updated" : "Status updated via ticket edit",
+    });
 
     const message =
       category !== undefined

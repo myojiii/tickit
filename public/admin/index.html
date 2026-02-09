@@ -128,85 +128,158 @@
               <div class="mgmt-subtitle">View every ticket by queue position or status</div>
             </div>
             <div class="mgmt-pill"></div>
+            <div class="mgmt-header-actions">
+              <div class="view-toggle" role="tablist" aria-label="Ticket view">
+                <button class="view-toggle-btn active" type="button" data-view-toggle="kanban" role="tab" aria-selected="true">Card View</button>
+                <button class="view-toggle-btn" type="button" data-view-toggle="table" role="tab" aria-selected="false">Table View</button>
+              </div>
+            </div>
+          </div>
+          <div class="tickets-view" data-view="kanban">
+            <div class="kanban-board" id="kanban-board" aria-label="Ticket workflow board">
+              <div class="kanban-loading hidden" id="kanban-loading" aria-live="polite">Updating ticket...</div>
+              <div class="kanban-column" data-status="unassigned">
+                <div class="kanban-column-header">
+                  <div class="kanban-column-title">Unassigned</div>
+                  <div class="kanban-column-meta">
+                    <span class="kanban-count" data-count-for="unassigned">0</span>
+                  </div>
+                </div>
+                <div class="kanban-column-body" data-status="unassigned" data-dropzone="unassigned" aria-label="Unassigned tickets"></div>
+              </div>
+              <div class="kanban-column" data-status="open">
+                <div class="kanban-column-header">
+                  <div class="kanban-column-title">Open</div>
+                  <div class="kanban-column-meta">
+                    <span class="kanban-count" data-count-for="open">0</span>
+                    <span class="kanban-lock" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+                <div class="kanban-column-body" data-status="open" data-dropzone="open" aria-label="Open tickets"></div>
+              </div>
+              <div class="kanban-column" data-status="in-progress">
+                <div class="kanban-column-header">
+                  <div class="kanban-column-title">In Progress</div>
+                  <div class="kanban-column-meta">
+                    <span class="kanban-count" data-count-for="in-progress">0</span>
+                    <span class="kanban-lock" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+                <div class="kanban-column-body" data-status="in-progress" data-dropzone="in-progress" aria-label="In Progress tickets"></div>
+              </div>
+              <div class="kanban-column" data-status="resolved">
+                <div class="kanban-column-header">
+                  <div class="kanban-column-title">Resolved</div>
+                  <div class="kanban-column-meta">
+                    <span class="kanban-count" data-count-for="resolved">0</span>
+                    <span class="kanban-lock" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+                <div class="kanban-column-body" data-status="resolved" data-dropzone="resolved" aria-label="Resolved tickets"></div>
+              </div>
+            </div>
           </div>
 
-          <div class="mgmt-tabs tickets-tabs">
-            <button class="mgmt-tab active" data-tab="unassigned">Unassigned</button>
-            <button class="mgmt-tab" data-tab="open">Open</button>
-            <button class="mgmt-tab" data-tab="in-progress">In Progress</button>
-            <button class="mgmt-tab" data-tab="resolved">Resolved</button>
-          </div>
+          <div class="tickets-view hidden" data-view="table">
+            <div class="table-controls">
+              <div class="table-search">
+                <input type="text" id="tickets-filter" placeholder="Filter tickets..." aria-label="Filter tickets">
+              </div>
+            </div>
 
-          <div class="mgmt-table-wrap">
-            <table class="mgmt-table tickets-table" data-status="unassigned">
-              <thead>
-                <tr>
-                  <th>Ticket Title</th>
-                  <th>Ticket Description</th>
-                  <th>Date Submitted</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colspan="4" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="mgmt-tabs tickets-tabs">
+              <button class="mgmt-tab active" data-tab="unassigned">Unassigned</button>
+              <button class="mgmt-tab" data-tab="open">Open</button>
+              <button class="mgmt-tab" data-tab="in-progress">In Progress</button>
+              <button class="mgmt-tab" data-tab="resolved">Resolved</button>
+            </div>
 
-            <table class="mgmt-table tickets-table hidden" data-status="open">
-              <thead>
-                <tr>
-                  <th>Ticket Title</th>
-                  <th>Ticket Description</th>
-                  <th>Date Submitted</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colspan="6" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="mgmt-table-wrap">
+              <table class="mgmt-table tickets-table" data-status="unassigned">
+                <thead>
+                  <tr>
+                    <th data-sortable="true">Ticket Title</th>
+                    <th data-sortable="true">Ticket Description</th>
+                    <th data-sortable="true">Date Submitted</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="4" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
+                  </tr>
+                </tbody>
+              </table>
 
-            <table class="mgmt-table tickets-table hidden" data-status="in-progress">
-              <thead>
-                <tr>
-                  <th>Ticket Title</th>
-                  <th>Ticket Description</th>
-                  <th>Date Submitted</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colspan="6" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
-                </tr>
-              </tbody>
-            </table>
+              <table class="mgmt-table tickets-table hidden" data-status="open">
+                <thead>
+                  <tr>
+                    <th data-sortable="true">Ticket Title</th>
+                    <th data-sortable="true">Ticket Description</th>
+                    <th data-sortable="true">Date Submitted</th>
+                    <th data-sortable="true">Category</th>
+                    <th data-sortable="true">Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="6" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
+                  </tr>
+                </tbody>
+              </table>
 
-            <table class="mgmt-table tickets-table hidden" data-status="resolved">
-              <thead>
-                <tr>
-                  <th>Ticket Title</th>
-                  <th>Ticket Description</th>
-                  <th>Date Submitted</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colspan="6" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
-                </tr>
-              </tbody>
-            </table>
+              <table class="mgmt-table tickets-table hidden" data-status="in-progress">
+                <thead>
+                  <tr>
+                    <th data-sortable="true">Ticket Title</th>
+                    <th data-sortable="true">Ticket Description</th>
+                    <th data-sortable="true">Date Submitted</th>
+                    <th data-sortable="true">Category</th>
+                    <th data-sortable="true">Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="6" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <table class="mgmt-table tickets-table hidden" data-status="resolved">
+                <thead>
+                  <tr>
+                    <th data-sortable="true">Ticket Title</th>
+                    <th data-sortable="true">Ticket Description</th>
+                    <th data-sortable="true">Date Submitted</th>
+                    <th data-sortable="true">Category</th>
+                    <th data-sortable="true">Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="6" style="text-align:center;padding:40px;color:#666;">Loading tickets...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
       </div>
@@ -223,6 +296,7 @@
 
       <div class="modal-body">
         <div class="modal-row"><strong>Ticket ID:</strong> <span class="modal-ticket-id">-</span></div>
+        <div class="modal-row"><strong>Client:</strong> <span class="modal-ticket-client">-</span></div>
         <div class="modal-row"><strong>Title:</strong> <span class="modal-ticket-title">-</span></div>
         <div class="modal-row"><strong>Description:</strong>
           <div class="modal-desc">-</div>
@@ -238,7 +312,7 @@
 
       <footer class="modal-footer">
         <button class="modal-btn" id="assign-modal-cancel">Cancel</button>
-        <button class="modal-btn primary" id="assign-modal-assign">Assign Category</button>
+        <button class="modal-btn primary" id="assign-modal-assign">Assign &amp; Continue</button>
       </footer>
     </div>
   </div>
@@ -379,6 +453,7 @@
   <div class="notification-container" id="notification-container"></div>
 
   <!-- CRITICAL: Load the JavaScript file -->
+  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
   <script src="/scripts/admin.js"></script>
 </body>
 </html>
