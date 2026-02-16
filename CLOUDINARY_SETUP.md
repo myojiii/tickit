@@ -22,8 +22,8 @@ Instead of storing images on the server's file system, they are now uploaded to 
 Create a `.env` file in your project root (copy from `.env.example`):
 
 ```
-MONGO_URL=mongodb://localhost:27017/Ticketing
-PORT=7000
+MONGO_URL=mongodb+srv://ticketing:pass123@ticketing.l4d0k5r.mongodb.net/
+PORT=3000
 CLOUDINARY_CLOUD_NAME=your_cloud_name_here
 CLOUDINARY_API_KEY=your_api_key_here
 CLOUDINARY_API_SECRET=your_api_secret_here

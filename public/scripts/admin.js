@@ -1052,6 +1052,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         card.className = 'kanban-card';
         card.dataset.ticketId = ticket.id || '';
         card.dataset.status = normalizeStatusKey(ticket.status);
+        card.draggable = true;
         card.setAttribute('tabindex', '0');
         card.setAttribute('role', 'button');
         card.setAttribute('aria-label', `Ticket: ${safeTitle}`);
@@ -1082,6 +1083,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             openTicketModalById(ticket.id);
           }
         });
+        card.addEventListener('dragstart', (event) => {
+          const sourceColumn = card.closest('.kanban-column');
+          card.classList.add('is-dragging');
+          card.setAttribute('aria-grabbed', 'true');
+          sourceColumn?.classList.add('is-drag-source');
+          card.dataset.originStatus = sourceColumn?.dataset.status || '';
+
+          if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', card.dataset.ticketId || '');
+          }
+        });
+        card.addEventListener('dragend', () => {
+          clearKanbanDragState();
+        });
 
         columnBody.appendChild(card);
       });
@@ -1109,59 +1125,68 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   };
 
+  const clearKanbanDragState = () => {
+    document.querySelectorAll('.kanban-card.is-dragging').forEach((card) => {
+      card.classList.remove('is-dragging');
+      card.setAttribute('aria-grabbed', 'false');
+    });
+    document.querySelectorAll('.kanban-column.is-drag-source').forEach((column) => {
+      column.classList.remove('is-drag-source');
+    });
+    document.querySelectorAll('.kanban-column.drag-over').forEach((column) => {
+      column.classList.remove('drag-over');
+    });
+    document.querySelectorAll('.kanban-column-body.drag-over').forEach((columnBody) => {
+      columnBody.classList.remove('drag-over');
+    });
+  };
+
   const setupKanbanDnD = () => {
-    if (kanbanDnDReady || !window.interact) return;
+    if (kanbanDnDReady) return;
     kanbanDnDReady = true;
 
-    interact('.kanban-card').draggable({
-      inertia: true,
-      autoScroll: true,
-      listeners: {
-        start(event) {
-          const card = event.target;
-          card.classList.add('is-dragging');
-          card.setAttribute('aria-grabbed', 'true');
-          card.dataset.originStatus = card.closest('.kanban-column')?.dataset.status || '';
-        },
-        move(event) {
-          const target = event.target;
-          const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-          const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+    document.querySelectorAll('.kanban-column-body').forEach((dropzone) => {
+      const parentColumn = dropzone.closest('.kanban-column');
 
-          target.style.transform = `translate(${x}px, ${y}px)`;
-          target.setAttribute('data-x', x);
-          target.setAttribute('data-y', y);
-        },
-        end(event) {
-          const card = event.target;
-          card.classList.remove('is-dragging');
-          card.setAttribute('aria-grabbed', 'false');
-          card.style.transform = '';
-          card.removeAttribute('data-x');
-          card.removeAttribute('data-y');
-        },
-      },
-    });
+      dropzone.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        dropzone.classList.add('drag-over');
+        parentColumn?.classList.add('drag-over');
+      });
 
-    interact('.kanban-column-body').dropzone({
-      accept: '.kanban-card',
-      overlap: 0.2,
-      ondropactivate(event) {
-        event.target.classList.add('drop-active');
-      },
-      ondragenter(event) {
-        event.target.classList.add('drop-target');
-      },
-      ondragleave(event) {
-        event.target.classList.remove('drop-target');
-      },
-      ondropdeactivate(event) {
-        event.target.classList.remove('drop-active');
-        event.target.classList.remove('drop-target');
-      },
-      ondrop(event) {
-        handleKanbanDrop(event);
-      },
+      dropzone.addEventListener('dragleave', (event) => {
+        const nextTarget = event.relatedTarget;
+        if (nextTarget && dropzone.contains(nextTarget)) return;
+        dropzone.classList.remove('drag-over');
+        parentColumn?.classList.remove('drag-over');
+      });
+
+      dropzone.addEventListener('drop', async (event) => {
+        event.preventDefault();
+        dropzone.classList.remove('drag-over');
+        parentColumn?.classList.remove('drag-over');
+
+        const ticketId = event.dataTransfer?.getData('text/plain') || '';
+        if (!ticketId) {
+          clearKanbanDragState();
+          return;
+        }
+
+        const draggedCard =
+          Array.from(document.querySelectorAll('.kanban-card')).find((card) => card.dataset.ticketId === ticketId) ||
+          document.querySelector('.kanban-card.is-dragging');
+
+        if (!draggedCard) {
+          clearKanbanDragState();
+          return;
+        }
+
+        await handleKanbanDrop({
+          target: dropzone,
+          relatedTarget: draggedCard,
+        });
+        clearKanbanDragState();
+      });
     });
   };
 
