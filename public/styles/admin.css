@@ -1,19 +1,19 @@
 @import url("https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&display=swap");
 
 :root {
-  --bg: #f5f7fb;
+  --bg: #f5f6fa;
   --panel: #ffffff;
-  --text-strong: #3F4040;
+  --text-strong: #3f4040;
   --text: #3c4866;
   --muted: #7b8296;
-  --primary: #FBB019;
-  --primary-hover: #EE4036;
+  --primary: #ff4444;
+  --primary-hover: #e33b3b;
   --border: #e3e7ef;
-  --shadow: 0 10px 30px rgba(251, 176, 25, 0.08);
+  --shadow: 0 10px 30px rgba(255, 68, 68, 0.08);
   --pill-yellow: #fceacf;
-  --pill-yellow-text: #FBB019;
+  --pill-yellow-text: #fbb019;
   --pill-red: #ffe0e5;
-  --pill-red-text: #EE4036;
+  --pill-red-text: #ee4036;
   --pill-blue: #e5efff;
   --pill-blue-text: #3f7dfd;
   --pill-orange: #ffe7d6;
@@ -55,8 +55,8 @@ body {
 
 .sidebar {
   position: relative;
-  background: #f9fbff;
-  border-right: 1px solid var(--border);
+  background: #e8f1ff;
+  border-right: 1px solid #d7e4ff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -158,7 +158,7 @@ body {
 .brand-name {
   font-size: 20px;
   font-weight: 800;
-  color: var(--text-strong);
+  color: #1c3d75;
 }
 
 .brand-sub {
@@ -196,18 +196,18 @@ body {
 }
 
 .nav-btn:hover {
-  background: rgba(74, 59, 255, 0.08);
-  color: var(--primary);
+  background: #FBB019;
+  color: #fff;
 }
 
 .nav-btn.active {
-  background: var(--primary-hover);
+  background: var(--primary);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(74, 59, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(255, 68, 68, 0.25);
 }
 
 .nav-btn.active:hover {
-  background: var(--primary);
+  background: var(--primary-hover);
 }
 
 .sidebar.collapsed .nav-btn {
@@ -573,10 +573,9 @@ body {
 }
 
 .primary-btn:hover {
-  background: var(--primary);
+  background: #FBB019;
   box-shadow: 0 6px 16px rgba(251, 176, 25, 0.3);
 }
-
 .primary-btn:active {
   transform: scale(0.97);
 }
@@ -692,15 +691,15 @@ body {
    ======================================== */
 .management-area {
   padding: 28px;
-  background: linear-gradient(135deg, #f6f8ff 0%, #eef2f9 100%);
+  background: var(--bg);
 }
 
 .mgmt-card {
-  background: #fff;
-  border: 1px solid #e3e7f3;
-  border-radius: 18px;
-  box-shadow: 0 14px 40px rgba(17, 38, 146, 0.08);
-  padding: 20px 20px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 .mgmt-header {
@@ -732,7 +731,7 @@ body {
   padding: 8px 14px;
   border-radius: 999px;
   background: rgba(251, 176, 25, 0.08);
-  color: #FBB019;
+  color: #fbb019;
   font-weight: 700;
   font-size: 13px;
 }
@@ -742,6 +741,27 @@ body {
   gap: 12px;
   margin: 0;
   padding-left: 0;
+}
+
+.mgmt-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.mgmt-tabs-container,
+.mgmt-actions-container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 6px;
+}
+
+.mgmt-actions-container {
+  min-width: 170px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .mgmt-header-actions {
@@ -773,12 +793,12 @@ body {
 }
 
 .view-toggle-btn:hover {
-  background: #ffb019;
+  background: #FBB019;
   color: #fff;
 }
 
 .view-toggle-btn.active {
-  background: #EE4036;
+  background: var(--primary);
   color: #fff;
 }
 
@@ -790,34 +810,116 @@ body {
   display: none;
 }
 
-.table-controls {
+.tickets-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 6px 4px 18px;
+}
+
+.tickets-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tickets-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.tickets-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.tickets-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tickets-count {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #e4e7ee;
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.tickets-filter-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  margin: 12px 4px 16px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid #e4e7ee;
+  background: #fff;
+  margin: 4px 4px 16px;
 }
 
-.table-controls .table-search {
+.tickets-status-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.tickets-filter-bar .mgmt-tab {
+  min-width: 0;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 0 14px;
+}
+
+.tickets-filter-bar .mgmt-tab + .mgmt-tab {
+  margin-left: 6px;
+}
+
+.tickets-filter-bar .mgmt-tab:hover {
+  background: FBB019;
+  color: #fff;
+}
+
+.tickets-filter-bar .mgmt-tab.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: none;
+}
+
+.tickets-search {
   margin-left: auto;
 }
 
-.table-search input {
-  height: 40px;
-  min-width: 260px;
-  border-radius: 12px;
+.tickets-search input {
+  height: 36px;
+  min-width: 240px;
+  border-radius: 10px;
   border: 1px solid #e4e7ee;
   padding: 0 14px;
   font-size: 13px;
   font-weight: 600;
   color: #1f2937;
-  background: #fff;
+  background: #f8f9fd;
 }
 
-.table-search input:focus {
-  outline: 2px solid #ffd38d;
-  border-color: #ffd38d;
+.tickets-search input:focus {
+  outline: 2px solid #ffb3b3;
+  border-color: #ffb3b3;
 }
 
 .kanban-board {
@@ -1082,16 +1184,16 @@ body {
 }
 
 .mgmt-tab {
-  min-width: 140px;
-  height: 48px;
-  border-radius: 12px;
-  border: 1px solid #e4e7ee;
+  min-width: 118px;
+  height: 42px;
+  border-radius: 10px;
+  border: none;
   background: #f7f8fc;
   color: #505a6b;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
-  padding: 0 18px;
+  padding: 0 14px;
   transition: all 0.15s ease;
 }
 
@@ -1128,19 +1230,21 @@ body {
 }
 
 #staff-actions .primary-btn {
-  height: 46px;
-  padding: 0 20px;
-  border-radius: 14px;
-  font-size: 14px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 700;
+  border: none;
 }
 
 #category-actions .primary-btn {
-  height: 46px;
-  padding: 0 20px;
-  border-radius: 14px;
-  font-size: 14px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 700;
+  border: none;
 }
 
 .mgmt-table thead {

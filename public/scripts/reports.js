@@ -198,6 +198,9 @@ async function loadTicketsPerCategory() {
     });
 
     const response = await fetch(`/api/reports/category?${params}`);
+    if (!response.ok) {
+      throw new Error(`Failed to load category report (${response.status})`);
+    }
     const data = await response.json();
 
     // Update stats cards
@@ -342,12 +345,14 @@ async function loadResolutionTimeAnalysis() {
     const params = new URLSearchParams({
       ...(currentFilters.startDate && { startDate: currentFilters.startDate }),
       ...(currentFilters.endDate && { endDate: currentFilters.endDate }),
-      ...(currentFilters.category !== "all" && { category: currentFilters.category }),
       ...(currentFilters.priority !== "all" && { priority: currentFilters.priority }),
       ...(currentFilters.staffId !== "all" && { staffId: currentFilters.staffId }),
     });
 
     const response = await fetch(`/api/reports/resolution?${params}`);
+    if (!response.ok) {
+      throw new Error(`Failed to load resolution report (${response.status})`);
+    }
     const data = await response.json();
 
     // Update stats cards
@@ -375,6 +380,12 @@ function updateOverdueTable(overdueTickets) {
   const tbody = document.querySelector("#overdue-table tbody");
   tbody.innerHTML = "";
 
+  const truncateTitle = (value, maxLength = 30) => {
+    const text = (value || "").toString();
+    if (text.length <= maxLength) return text;
+    return `${text.slice(0, maxLength - 1)}…`;
+  };
+
   if (overdueTickets.length === 0) {
     tbody.innerHTML = `
       <tr>
@@ -388,9 +399,11 @@ function updateOverdueTable(overdueTickets) {
 
   overdueTickets.forEach((ticket) => {
     const row = document.createElement("tr");
+    const fullTitle = (ticket.title || "").toString();
+    const shortTitle = truncateTitle(fullTitle, 30);
     row.innerHTML = `
       <td>${ticket.id}</td>
-      <td>${ticket.title}</td>
+      <td title="${fullTitle.replace(/"/g, "&quot;")}">${shortTitle}</td>
       <td>${ticket.category}</td>
       <td>${ticket.priority}</td>
       <td>${ticket.assignedTo}</td>
@@ -508,6 +521,9 @@ async function loadTicketVolumeTrends() {
     });
 
     const response = await fetch(`/api/reports/trends?${params}`);
+    if (!response.ok) {
+      throw new Error(`Failed to load trends report (${response.status})`);
+    }
     const data = await response.json();
 
     // Update table
@@ -622,13 +638,15 @@ async function exportReport(reportType) {
       ...(currentFilters.startDate && { startDate: currentFilters.startDate }),
       ...(currentFilters.endDate && { endDate: currentFilters.endDate }),
       ...(currentFilters.department !== "all" && { department: currentFilters.department }),
-      ...(currentFilters.category !== "all" && { category: currentFilters.category }),
       ...(currentFilters.priority !== "all" && { priority: currentFilters.priority }),
       ...(currentFilters.staffId !== "all" && { staffId: currentFilters.staffId }),
       ...(reportType === "trends" && { groupBy: document.getElementById("trends-groupby").value }),
     });
 
     const response = await fetch(`/api/reports/export?${params}`);
+    if (!response.ok) {
+      throw new Error(`Failed to export report (${response.status})`);
+    }
     const blob = await response.blob();
 
     // Create download link

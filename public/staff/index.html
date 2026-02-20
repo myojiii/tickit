@@ -90,56 +90,55 @@
       </header>
 
       <div class="scroll-area">
-        <section class="tickets-table-card">
-          <div class="tickets-card-head stacked">
-            <div>
-              <div class="tickets-title">Tickets</div>
-              <div class="tickets-sub">View every ticket by queue position or status</div>
-            </div>
-            <div class="view-toggle">
-              <button class="view-toggle-btn active" data-view="list" aria-label="List view">List View</button>
-              <button class="view-toggle-btn" data-view="kanban" aria-label="Kanban view">Card View</button>
-            </div>
+        <div class="tickets-header">
+          <div class="tickets-header-text">
+            <div class="tickets-title">Tickets</div>
+            <div class="tickets-sub">View every ticket by queue position or status</div>
           </div>
-
-          <div class="tabs-and-priority">
-            <div class="tickets-tabs tabs-oval">
-              <button class="ticket-tab active" data-status="all">All</button>
-              <button class="ticket-tab" data-status="open">Open</button>
-              <button class="ticket-tab" data-status="in-progress">In Progress</button>
-              <button class="ticket-tab" data-status="resolved">Resolved</button>
-            </div>
-            <div class="priority-filter inline">
-              <label for="priority-filter" class="priority-label">Priority</label>
-              <select id="priority-filter" class="priority-select">
-                <option value="all">All</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-            </div>
+          <div class="view-toggle" role="tablist" aria-label="Ticket view">
+            <button class="view-toggle-btn active" data-view="list" role="tab" aria-selected="true">List View</button>
+            <button class="view-toggle-btn" data-view="kanban" role="tab" aria-selected="false">Card View</button>
           </div>
+        </div>
 
-          <div class="table-wrap">
-            <table class="tickets-table-staff">
-              <thead>
-                <tr>
-                  <th>Ticket ID</th>
-                  <th>Ticket Title</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Priority</th>
-                  <th>Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="staff-tickets-body">
-                <tr><td colspan="7" style="text-align:center;padding:32px;color:#667085;">Loading tickets...</td></tr>
-              </tbody>
-            </table>
+        <div class="tabs-and-priority" role="group" aria-label="Ticket filters">
+          <div class="tickets-tabs" role="tablist" aria-label="Ticket status filters">
+            <button class="ticket-tab active" data-status="all">All</button>
+            <button class="ticket-tab" data-status="open">Open</button>
+            <button class="ticket-tab" data-status="in-progress">In Progress</button>
+            <button class="ticket-tab" data-status="resolved">Resolved</button>
           </div>
+          <div class="priority-filter inline">
+            <label for="priority-filter" class="priority-label">Priority</label>
+            <select id="priority-filter" class="priority-select">
+              <option value="all">All</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Not Set">Not Set</option>
+            </select>
+          </div>
+        </div>
 
-          <div class="kanban-wrap hidden" id="kanban-wrap">
+        <div class="table-wrap">
+          <table class="tickets-table-staff">
+            <thead>
+              <tr>
+                <th>Ticket ID</th>
+                <th>Ticket Title</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="staff-tickets-body">
+              <tr><td colspan="7" style="text-align:center;padding:32px;color:#667085;">Loading tickets...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="kanban-wrap hidden" id="kanban-wrap">
             <div class="kanban-board" id="kanban-board" aria-label="Ticket workflow board">
               <div class="kanban-column" data-status="open">
                 <div class="kanban-column-header">
@@ -170,9 +169,24 @@
               </div>
             </div>
           </div>
-        </section>
       </div>
     </section>
+  </div>
+
+  <div class="modal-overlay hidden" id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
+    <div class="modal-card" role="document">
+      <header class="modal-header">
+        <h3 class="modal-title" id="logout-modal-title">Log out</h3>
+        <button class="modal-close" id="logout-modal-close" aria-label="Close dialog">×</button>
+      </header>
+      <div class="modal-body">
+        <p class="modal-text">Are you sure you want to log out?</p>
+      </div>
+      <footer class="modal-footer">
+        <button class="modal-btn" id="logout-cancel-btn" type="button">Cancel</button>
+        <button class="modal-btn primary" id="logout-confirm-btn" type="button">Log out</button>
+      </footer>
+    </div>
   </div>
 
   <div class="notification-container" id="notification-container"></div>

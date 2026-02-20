@@ -23,12 +23,41 @@ document.addEventListener("DOMContentLoaded", async () => {
   // LOGOUT FUNCTIONALITY
   // ========================================
   const logoutBtn = document.getElementById('logout-btn');
+  const logoutModal = document.getElementById('logout-modal');
+  const logoutConfirmBtn = document.getElementById('logout-confirm-btn');
+  const logoutCancelBtn = document.getElementById('logout-cancel-btn');
+  const logoutCloseBtn = document.getElementById('logout-modal-close');
+
+  const openLogoutModal = () => logoutModal?.classList.remove('hidden');
+  const closeLogoutModal = () => logoutModal?.classList.add('hidden');
+
+  const performLogout = () => {
+    window.location.href = '/';
+  };
 
   logoutBtn?.addEventListener('click', () => {
+    if (logoutModal) {
+      openLogoutModal();
+      return;
+    }
+
     const confirmLogout = confirm('Are you sure you want to logout?');
-    
     if (confirmLogout) {
-      window.location.href = '/';
+      performLogout();
+    }
+  });
+
+  logoutConfirmBtn?.addEventListener('click', () => {
+    closeLogoutModal();
+    performLogout();
+  });
+
+  logoutCancelBtn?.addEventListener('click', closeLogoutModal);
+  logoutCloseBtn?.addEventListener('click', closeLogoutModal);
+
+  logoutModal?.addEventListener('click', (event) => {
+    if (event.target === logoutModal) {
+      closeLogoutModal();
     }
   });
 
@@ -361,6 +390,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (p === "high") return "high";
     if (p === "medium") return "medium";
     if (p === "low") return "low";
+    if (p === "not set" || !p) return "not-set";
     return "";
   };
 
@@ -379,7 +409,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     ticketsTableBody.innerHTML = "";
 
     if (!Array.isArray(tickets) || tickets.length === 0) {
-      ticketsTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:#667085;">No tickets found</td></tr>`;
+      ticketsTableBody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align:center;padding:32px;color:#667085;">No tickets found. Try a different status or priority.</td>
+        </tr>
+      `;
       return;
     }
 

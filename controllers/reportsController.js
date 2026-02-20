@@ -2,6 +2,43 @@ import TicketModel from "../models/Ticket.js";
 import CategoryModel from "../models/Category.js";
 import UserModel from "../models/User.js";
 import NotificationModel from "../models/Notifications.js";
+import TicketAuditModel from "../models/TicketAudit.js";
+
+const RESOLVED_STATUS_REGEX = /^(resolved|closed)$/i;
+
+const getPeriodGroupExpression = (field, groupBy) => {
+  switch (groupBy) {
+    case "week":
+      return { $week: field };
+    case "month":
+      return { $month: field };
+    case "day":
+    default:
+      return { $dateToString: { format: "%Y-%m-%d", date: field } };
+  }
+};
+
+const getResolvedAtMap = async (tickets) => {
+  const ticketIds = tickets.map((ticket) => ticket._id?.toString()).filter(Boolean);
+  if (ticketIds.length === 0) return new Map();
+
+  const resolvedAudits = await TicketAuditModel.find({
+    ticketId: { $in: ticketIds },
+    toStatus: { $regex: RESOLVED_STATUS_REGEX },
+  })
+    .sort({ createdAt: 1 })
+    .select("ticketId createdAt")
+    .lean();
+
+  const resolvedAtMap = new Map();
+  resolvedAudits.forEach((audit) => {
+    if (audit?.ticketId && audit?.createdAt) {
+      resolvedAtMap.set(audit.ticketId.toString(), new Date(audit.createdAt));
+    }
+  });
+
+  return resolvedAtMap;
+};
 
 // Helper function to parse date filters
 const parseDateFilter = (startDate, endDate) => {
@@ -73,7 +110,7 @@ const getResolutionTimeAnalysis = async (req, res) => {
     const { startDate, endDate, category, priority, staffId } = req.query;
 
     // Build query filter
-    const filter = { status: "Closed" };
+    const filter = { status: { $regex: RESOLVED_STATUS_REGEX } };
 
     // Date filter
     const dateFilter = parseDateFilter(startDate, endDate);
@@ -96,10 +133,10 @@ const getResolutionTimeAnalysis = async (req, res) => {
       filter.assignedStaffId = staffId;
     }
 
-    // Fetch closed tickets
-    const closedTickets = await TicketModel.find(filter).lean();
+    // Fetch resolved/closed tickets
+    const resolvedTickets = await TicketModel.find(filter).lean();
 
-    if (closedTickets.length === 0) {
+    if (resolvedTickets.length === 0) {
       return res.json({
         totalResolved: 0,
         averageResolutionTime: 0,
@@ -112,10 +149,14 @@ const getResolutionTimeAnalysis = async (req, res) => {
       });
     }
 
+    const resolvedAtMap = await getResolvedAtMap(resolvedTickets);
+
     // Calculate resolution times (in hours)
-    const ticketsWithResolution = closedTickets.map((ticket) => {
+    const ticketsWithResolution = resolvedTickets.map((ticket) => {
       const createdDate = new Date(ticket.date);
-      const resolvedDate = new Date(ticket.updatedAt || ticket.date);
+      const resolvedDate = new Date(
+        resolvedAtMap.get(ticket._id?.toString()) || ticket.updatedAt || ticket.date
+      );
       const resolutionTimeHours = (resolvedDate - createdDate) / (1000 * 60 * 60);
       
       return {
@@ -182,12 +223,19 @@ const getResolutionTimeAnalysis = async (req, res) => {
 
     // Find overdue tickets (open tickets older than 48 hours)
     const overdueFilter = {
-      status: { $ne: "Closed" },
+      status: { $not: RESOLVED_STATUS_REGEX },
       date: { $lte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
     };
 
     const overdueTickets = await TicketModel.find(overdueFilter)
-      .select("ticket title category name priority assignedStaffName date status")
+      .select({
+        "ticket title": 1,
+        "category name": 1,
+        priority: 1,
+        assignedStaffName: 1,
+        date: 1,
+        status: 1,
+      })
       .lean();
 
     const overdueWithAge = overdueTickets.map((ticket) => {
@@ -204,7 +252,7 @@ const getResolutionTimeAnalysis = async (req, res) => {
     });
 
     res.json({
-      totalResolved: closedTickets.length,
+      totalResolved: resolvedTickets.length,
       averageResolutionTime: averageResolutionTime.toFixed(2),
       fastestResolution: fastestResolution.toFixed(2),
       slowestResolution: slowestResolution.toFixed(2),
@@ -232,49 +280,40 @@ const getTicketVolumeTrends = async (req, res) => {
       filter.date = dateFilter;
     }
 
-    // Determine grouping format
-    let groupFormat;
-    switch (groupBy) {
-      case "week":
-        groupFormat = { $week: "$date" };
-        break;
-      case "month":
-        groupFormat = { $month: "$date" };
-        break;
-      case "day":
-      default:
-        groupFormat = { $dateToString: { format: "%Y-%m-%d", date: "$date" } };
-        break;
-    }
+    const openedGroupFormat = getPeriodGroupExpression("$date", groupBy);
+    const resolvedGroupFormat = getPeriodGroupExpression("$createdAt", groupBy);
 
     // Aggregate opened tickets
     const openedTickets = await TicketModel.aggregate([
       { $match: filter },
       {
         $group: {
-          _id: groupFormat,
+          _id: openedGroupFormat,
           count: { $sum: 1 },
         },
       },
       { $sort: { _id: 1 } },
     ]);
 
-    // Aggregate resolved tickets (using updatedAt for closed tickets)
-    const resolvedTickets = await TicketModel.aggregate([
+    // Aggregate resolved tickets from status audit timestamps
+    const resolvedTickets = await TicketAuditModel.aggregate([
       {
         $match: {
-          status: "Closed",
-          ...(dateFilter && { updatedAt: dateFilter }),
+          toStatus: { $regex: RESOLVED_STATUS_REGEX },
+          ...(dateFilter && { createdAt: dateFilter }),
         },
       },
       {
         $group: {
-          _id:
-            groupBy === "day"
-              ? { $dateToString: { format: "%Y-%m-%d", date: "$updatedAt" } }
-              : groupBy === "week"
-              ? { $week: "$updatedAt" }
-              : { $month: "$updatedAt" },
+          _id: {
+            period: resolvedGroupFormat,
+            ticketId: "$ticketId",
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.period",
           count: { $sum: 1 },
         },
       },
@@ -382,7 +421,7 @@ const generateCategoryExport = async (filters) => {
 // Helper: Generate resolution export data
 const generateResolutionExport = async (filters) => {
   const { startDate, endDate, category, priority, staffId } = filters;
-  const filter = { status: "Closed" };
+  const filter = { status: { $regex: RESOLVED_STATUS_REGEX } };
 
   const dateFilter = parseDateFilter(startDate, endDate);
   if (dateFilter) filter.date = dateFilter;
@@ -391,10 +430,13 @@ const generateResolutionExport = async (filters) => {
   if (staffId && staffId !== "all") filter.assignedStaffId = staffId;
 
   const tickets = await TicketModel.find(filter).lean();
+  const resolvedAtMap = await getResolvedAtMap(tickets);
 
   return tickets.map((ticket) => {
     const createdDate = new Date(ticket.date);
-    const resolvedDate = new Date(ticket.updatedAt || ticket.date);
+    const resolvedDate = new Date(
+      resolvedAtMap.get(ticket._id?.toString()) || ticket.updatedAt || ticket.date
+    );
     const resolutionHours = ((resolvedDate - createdDate) / (1000 * 60 * 60)).toFixed(2);
 
     return {
@@ -418,46 +460,38 @@ const generateTrendsExport = async (filters) => {
   const dateFilter = parseDateFilter(startDate, endDate);
   if (dateFilter) filter.date = dateFilter;
 
-  let groupFormat;
-  switch (groupBy) {
-    case "week":
-      groupFormat = { $week: "$date" };
-      break;
-    case "month":
-      groupFormat = { $month: "$date" };
-      break;
-    case "day":
-    default:
-      groupFormat = { $dateToString: { format: "%Y-%m-%d", date: "$date" } };
-      break;
-  }
+  const openedGroupFormat = getPeriodGroupExpression("$date", groupBy);
+  const resolvedGroupFormat = getPeriodGroupExpression("$createdAt", groupBy);
 
   const openedTickets = await TicketModel.aggregate([
     { $match: filter },
     {
       $group: {
-        _id: groupFormat,
+        _id: openedGroupFormat,
         count: { $sum: 1 },
       },
     },
     { $sort: { _id: 1 } },
   ]);
 
-  const resolvedTickets = await TicketModel.aggregate([
+  const resolvedTickets = await TicketAuditModel.aggregate([
     {
       $match: {
-        status: "Closed",
-        ...(dateFilter && { updatedAt: dateFilter }),
+        toStatus: { $regex: RESOLVED_STATUS_REGEX },
+        ...(dateFilter && { createdAt: dateFilter }),
       },
     },
     {
       $group: {
-        _id:
-          groupBy === "day"
-            ? { $dateToString: { format: "%Y-%m-%d", date: "$updatedAt" } }
-            : groupBy === "week"
-            ? { $week: "$updatedAt" }
-            : { $month: "$updatedAt" },
+        _id: {
+          period: resolvedGroupFormat,
+          ticketId: "$ticketId",
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$_id.period",
         count: { $sum: 1 },
       },
     },

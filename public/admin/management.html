@@ -132,18 +132,24 @@
             
           </div>
 
-          <div class="mgmt-tabs">
-            <button class="mgmt-tab active" data-tab="users">Users</button>
-            <button class="mgmt-tab" data-tab="staff">Staff</button>
-            <button class="mgmt-tab" data-tab="category">Category</button>
-          </div>
+          <div class="mgmt-controls-row">
+            <div class="mgmt-tabs-container">
+              <div class="mgmt-tabs">
+                <button class="mgmt-tab active" data-tab="users">Users</button>
+                <button class="mgmt-tab" data-tab="staff">Staff</button>
+                <button class="mgmt-tab" data-tab="category">Category</button>
+              </div>
+            </div>
 
-          <div class="mgmt-actions hidden" id="staff-actions">
-            <button class="primary-btn" id="add-staff-btn">Add New Staff</button>
-          </div>
+            <div class="mgmt-actions-container">
+              <div class="mgmt-actions hidden" id="staff-actions">
+                <button class="primary-btn" id="add-staff-btn">Add New Staff</button>
+              </div>
 
-          <div class="mgmt-actions hidden" id="category-actions">
-            <button class="primary-btn" id="add-category-btn">Add New Category</button>
+              <div class="mgmt-actions hidden" id="category-actions">
+                <button class="primary-btn" id="add-category-btn">Add New Category</button>
+              </div>
+            </div>
           </div>
 
           <div class="mgmt-table-wrap">
@@ -159,25 +165,7 @@
               </thead>
               <tbody id="mgmt-table-body">
                 <tr>
-                  <td>Maurice Ramos</td>
-                  <td>mauriceramos@gmail.com</td>
-                  <td>11/20/2025</td>
-                  <td>2</td>
-                  <td><button class="ghost-btn small"><span aria-hidden="true">👁</span> View Details</button></td>
-                </tr>
-                <tr>
-                  <td>Jhen Serrana</td>
-                  <td>jhenserrana@gmail.com</td>
-                  <td>12/12/2025</td>
-                  <td>1</td>
-                  <td><button class="ghost-btn small"><span aria-hidden="true">👁</span> View Details</button></td>
-                </tr>
-                <tr>
-                  <td>Jelaine Absalon</td>
-                  <td>jelainabsalon@gmail.com</td>
-                  <td>1/8/2025</td>
-                  <td>8</td>
-                  <td><button class="ghost-btn small"><span aria-hidden="true">👁</span> View Details</button></td>
+                  <td colspan="5" style="text-align:center;padding:24px;color:#6b7280;">Loading users...</td>
                 </tr>
               </tbody>
             </table>

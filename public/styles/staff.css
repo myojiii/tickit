@@ -1,23 +1,23 @@
 @import url("https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;600;700&display=swap");
 
 :root {
-  --bg: #f5f7fb;
+  --bg: #f5f6fa;
   --panel: #ffffff;
-  --text-strong: #3F4040;
+  --text-strong: #3f4040;
   --text: #3c4866;
   --muted: #7b8296;
-  --primary: #FBB019;
-  --primary-hover: #EE4036;
+  --primary: #ef4444;
+  --primary-hover: #dc3f3f;
   --border: #e3e7ef;
-  --shadow: 0 10px 30px rgba(251, 176, 25, 0.08);
-  --pill-yellow: #fceacf;
-  --pill-yellow-text: #FBB019;
+  --shadow: 0 10px 30px rgba(239, 68, 68, 0.08);
+  --pill-yellow: #fef3c7;
+  --pill-yellow-text: #92400e;
   --pill-red: #ffe0e5;
-  --pill-red-text: #EE4036;
+  --pill-red-text: #ee4036;
   --pill-blue: #e5efff;
   --pill-blue-text: #3f7dfd;
   --pill-orange: #ffe7d6;
-  --pill-orange-text: #d87730;
+  --pill-orange-text: #b45309;
 }
 
 *,
@@ -1159,6 +1159,112 @@ body {
 
 .notification.removing {
   animation: slideOutRight 0.3s ease-out forwards;
+}
+
+/* ========================================
+   MODAL
+   ======================================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 3000;
+}
+
+.modal-overlay.hidden {
+  display: none;
+}
+
+.modal-card {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #6b7280;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  background: #f9fafb;
+  color: #111827;
+}
+
+.modal-body {
+  padding: 18px;
+}
+
+.modal-text {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 18px;
+  border-top: 1px solid #eef2f7;
+  background: #fbfcfe;
+}
+
+.modal-btn {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #1f2937;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-btn:hover {
+  background: #f3f4f6;
+}
+
+.modal-btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.modal-btn.primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 @keyframes slideOutRight {

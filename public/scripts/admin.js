@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ========================================
   // TICKET STATUS TABS (Admin tickets page)
   // ========================================
-  const ticketTabs = document.querySelectorAll('.tickets-tabs .mgmt-tab');
+  const ticketTabs = document.querySelectorAll('.tickets-status-filters .mgmt-tab');
   const ticketTables = document.querySelectorAll('.mgmt-table[data-status]');
   const viewToggleButtons = document.querySelectorAll('[data-view-toggle]');
   const ticketsViewPanels = document.querySelectorAll('.tickets-view');
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Ensure default tab shown on load
-  const initialTab = document.querySelector('.tickets-tabs .mgmt-tab.active')?.dataset.tab || 'open';
+  const initialTab = document.querySelector('.tickets-status-filters .mgmt-tab.active')?.dataset.tab || 'open';
   activateTicketTab(initialTab);
 
   viewToggleButtons.forEach((btn) => {
