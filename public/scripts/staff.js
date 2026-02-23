@@ -439,6 +439,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const createKanbanCard = (ticket) => {
     const statusKey = mapStatusForFilter(ticket.status);
+    const statusLabel = statusKey === "in-progress"
+      ? "In Progress"
+      : statusKey === "resolved"
+      ? "Resolved"
+      : "Open";
     const card = document.createElement("div");
     card.className = "kanban-card";
     card.draggable = true;
@@ -455,9 +460,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     card.innerHTML = `
       <div class="kanban-card-header">
         <div class="kanban-card-title">${safeTitle}</div>
-        <span class="kanban-card-badge">${priorityText}</span>
+        <span class="status-badge ${statusKey}">${statusLabel}</span>
       </div>
-      <div class="kanban-card-meta">${displayId} · ${formatDate(ticket.date)}</div>
+      <div class="kanban-card-meta">${displayId} · ${formatDate(ticket.date)} · ${priorityText}</div>
       <div class="kanban-card-desc">${safeDesc}</div>
       <div class="kanban-card-footer">
         <span class="kanban-card-category">${safeCategory}</span>
